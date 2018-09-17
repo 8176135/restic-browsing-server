@@ -10,7 +10,7 @@
       <p>Logged in with user ID {{ id }}.</p>
       <ul>
           {{#each configs}}
-              <li><a href="bucket/{{@index}}">{{this}}</a></li>
+              <li><a href="bucket/{{this}}">{{this}}</a></li>
           {{/each}}
       </ul>
       <form action="/logout" method="post" accept-charset="utf-8">

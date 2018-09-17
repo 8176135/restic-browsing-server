@@ -157,8 +157,10 @@ pub fn decrypt(cipher_txt: &str, key: &str) -> String {
     let opening_key = ring::aead::OpeningKey::new(&CHACHA20_POLY1305, &key).unwrap();
 
     let mut data = base64::decode(cipher_txt).unwrap();
-
-    let out = ring::aead::open_in_place(&opening_key, data[data.len() - 8..].as_ref(), &[], 0, data[..data.len() - 8].as_mut()).expect("b");
+    let mut nonce = Vec::new();
+    nonce.copy_from_slice(&data[data.len() - 8..]);
+    let len = data.len();
+    let out = ring::aead::open_in_place(&opening_key, nonce.as_ref(), &[], 0, data[..len - 8].as_mut()).expect("b");
     String::from_utf8_lossy(out).to_string()
 }
 
@@ -187,11 +189,34 @@ pub fn encrypt_password(password: &str) -> (String, String) {
     (base64::encode(&output), base64::encode(&salt_buffer))
 }
 
-pub fn verify_user(db_entry: &db_tables::DbUser, password_candi: &str) -> bool {
+pub fn verify_user(db_entry: &db_tables::DbUserLogin, password_candi: &str) -> bool {
     ring::pbkdf2::verify(&ring::digest::SHA256, 100_000,
                          base64::decode(&db_entry.salt).unwrap().as_ref(),
                          password_candi.as_bytes(),
                          base64::decode(&db_entry.password).unwrap().as_ref()).is_ok()
+}
+
+pub fn restic_db(folder_name: &str,user: &::User) -> Result<Command, ()> {
+    use db_tables::{Users, ConnectionInfo};
+
+    let con = est_db_con();
+    let data: Vec<db_tables::DbEncryptedData> = Users::dsl::Users.inner_join(ConnectionInfo::table)
+        .select((Users::b2_bucket_name, Users::b2_acc_key, Users::b2_acc_id, ConnectionInfo::name, ConnectionInfo::encryption_password))
+        .filter(Users::id.eq(user.id as i32))
+        .filter(&ConnectionInfo::name.eq(folder_name))
+        .load::<db_tables::DbEncryptedData>(&con).expect("Failed to connect with db");
+
+    if data.is_empty() {
+        return Err(());
+    }
+
+    let data = data.first().unwrap();
+
+    Ok(restic(&data.b2_acc_key,
+              &data.b2_acc_id,
+              &data.b2_bucket_name,
+              &folder_name,
+              &decrypt(&data.encryption_password, &user.encryption_password)))
 }
 
 pub fn get_random_stuff(length: usize) -> String {

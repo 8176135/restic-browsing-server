@@ -1,6 +1,6 @@
 table! {
-    Users (user_id) {
-        user_id -> Integer,
+    Users (id) {
+        id -> Integer,
         username -> Text,
         email -> Text,
         password -> Text,
@@ -17,7 +17,6 @@ table! {
         id -> Integer,
         owning_user -> Integer,
         name -> Text,
-        connection_url -> Text,
         encryption_password -> Text,
     }
 }
@@ -39,10 +38,10 @@ pub struct DbUserIns {
     pub b2_bucket_name: String,
 }
 
-#[derive(Queryable, Debug, Clone)]
-//#[table_name = "Users"]
+#[derive(Identifiable,Queryable, Debug, Clone)]
+#[table_name = "Users"]
 pub struct DbUserLogin {
-    pub user_id: i32,
+    pub id: i32,
 //    pub username: String,
 //    pub email: String,
     pub password: String,
@@ -55,4 +54,6 @@ pub struct DbEncryptedData {
     pub b2_acc_key: String,
     pub b2_acc_id: String,
     pub b2_bucket_name: String,
+    pub name: String,
+    pub encryption_password: String,
 }
