@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login page</title>
+</head>
+<body>
+Hello, this is our message: {{flash}}
+<div>
+    <form action="/login" method="post" accept-charset="utf-8">
+        <label for="username">Username: </label>
+        <input type="text" name="username" id="username">
+        <label>Password: </label>
+        <input type="password" name="password" id="password">
+        <input type="submit" value="SUBMIT">
+    </form>
+    <a href="register">Register</a>
+</div>
+</body>
+</html>

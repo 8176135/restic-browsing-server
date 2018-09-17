@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+</head>
+<body>
+<form action="register_submit" method="post" onsubmit="validation()">
+    <input type="text" name="username" id="username" placeholder="Username" maxlength="25">
+    <input type="password" name="password" id="password" placeholder="Password">
+    <input type="password" id="passConf" placeholder="Password Confirm">
+    <input type="email" name="email" id="email" placeholder="Email" maxlength="100">
+    <input type="text" name="b2_acc_key" id="b2_acc_key" placeholder="B2 Account Key" maxlength="100">
+    <input type="text" name="b2_acc_id" id="b2_acc_id" placeholder="B2 Account ID" maxlength="100">
+    <input type="text" name="b2_bucket_name" id="b2_bucket_name" placeholder="B2 Bucket Name" maxlength="100">
+    <input type="submit" id="submit" value="Submit">
+</form>
+<script>
+    function validation() {
+        return document.getElementById("password").value === document.getElementById("passConf").value;
+    }
+</script>
+</body>
+</html>
