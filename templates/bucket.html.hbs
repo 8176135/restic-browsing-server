@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html>
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width"/>
-    <title>Rocket: Session Example</title>
+    <title>Repo: {{repo_name}}</title>
     <script
             src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -13,7 +14,7 @@
     <link rel="stylesheet" href="/public/css/bonsai.css">
 </head>
 <body>
-<h1>Buckets</h1>
+<h1>Repository: {{repo_name}}</h1>
 <p>{{status}}</p>
 
 <ul id="list">
@@ -25,7 +26,7 @@
 <form action="/logout" method="post" accept-charset="utf-8">
     <input type="submit" name="logout" id="logout" value="logout"/>
 </form>
-
+<script>const repo_name = "{{repo_name}}";</script>
 <script src="/public/js/bucket_items.js"></script>
 </body>
 </html>

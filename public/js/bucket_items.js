@@ -90,7 +90,7 @@ function download() {
             // let blob = new Blob([msg], { type: 'application/octet-stream' });
             let link = document.createElement('a');
             link.href = window.URL.createObjectURL(msg);
-            link.download = "YourFiles.zip";
+            link.download = "YourFilesIn-" + repo_name + ".zip";
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

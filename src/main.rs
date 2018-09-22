@@ -149,7 +149,7 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
 
     #[derive(Serialize)]
     struct BucketsData {
-        bucket_name: String,
+        repo_name: String,
         status_msg: String,
         files: String,
     }
@@ -224,7 +224,7 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
 
         Ok(Template::render("bucket",
                             BucketsData {
-                                bucket_name: folder_name.to_owned(),
+                                repo_name: folder_name.to_owned(),
                                 status_msg: String::new(),
                                 files: final_html,
                             }))
