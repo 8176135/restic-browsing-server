@@ -10,9 +10,14 @@
       <p>Logged in with user ID {{ id }}.</p>
       <ul>
           {{#each configs}}
-              <li><a href="bucket/{{this}}">{{this}}</a></li>
+              <li><a href="bucket/{{this}}">{{this}}</a><a href="delete/{{this}}"><button>Delete</button></a></li>
           {{/each}}
       </ul>
+      <form action="/add_repo" method="post" accept-charset="utf-8">
+          <input type="text" name="new_repo_name" id="new_repo_name" placeholder="New Repo Name">
+          <input type="password" name="new_repo_password" id="new_repo_password" placeholder="New Repo Password">
+          <input type="submit" value="Add New Repo" />
+      </form>
       <form action="/logout" method="post" accept-charset="utf-8">
          <input type="submit" name="logout" id="logout" value="logout" />
       </form>

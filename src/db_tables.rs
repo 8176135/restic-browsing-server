@@ -38,22 +38,28 @@ pub struct DbUserIns {
     pub b2_bucket_name: String,
 }
 
-#[derive(Identifiable,Queryable, Debug, Clone)]
+#[derive(Identifiable, Queryable, Debug, Clone)]
 #[table_name = "Users"]
 pub struct DbUserLogin {
     pub id: i32,
-//    pub username: String,
-//    pub email: String,
     pub password: String,
     pub salt: String,
     pub enced_enc_pass: String,
 }
 
+#[derive(Insertable, Debug)]
+#[table_name = "ConnectionInfo"]
+pub struct ConnectionInfoIns {
+    pub owning_user: i32,
+    pub name: String,
+    pub encryption_password: String,
+}
+
 #[derive(Queryable, Debug, Clone)]
 pub struct DbEncryptedData {
+    pub b2_bucket_name: String,
     pub b2_acc_key: String,
     pub b2_acc_id: String,
-    pub b2_bucket_name: String,
     pub name: String,
     pub encryption_password: String,
 }

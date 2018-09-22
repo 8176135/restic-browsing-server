@@ -83,23 +83,22 @@ pub fn encrypt_base64(plain_txt: &str, password: &str, nonce: &str) -> String {
     let mut key = [0; 32];
 //    let temp = nonce.last_mut()
     {
-        let temp = nonce.last_mut().unwrap();
+        let temp = nonce.first_mut().unwrap();
         *temp = temp.wrapping_add(1);
     };
 
+    ring::pbkdf2::derive(&ring::digest::SHA256, 100_000, nonce.as_ref(), password.as_bytes(), &mut key);
     let sealing_key = ring::aead::SealingKey::new(&CHACHA20_POLY1305, &key).unwrap();
 
     let mut data = Vec::from(plain_txt.as_bytes());
     data.extend(vec![0u8; ring::aead::CHACHA20_POLY1305.tag_len()]);
 
-    ring::pbkdf2::derive(&ring::digest::SHA256, 100_000, nonce.as_ref(), password.as_bytes(), &mut key);
-
     {
-        let temp = nonce.last_mut().unwrap();
+        let temp = nonce.first_mut().unwrap();
         *temp = temp.wrapping_add(1);
     };
 
-    let len = ring::aead::seal_in_place(&sealing_key, nonce.as_ref(), &[], data.as_mut(), ring::aead::CHACHA20_POLY1305.tag_len()).expect("a");
+    ring::aead::seal_in_place(&sealing_key, &nonce[..CHACHA20_POLY1305.nonce_len()], &[], data.as_mut(), CHACHA20_POLY1305.tag_len()).expect("a_64");
 
     base64::encode(&data)
 }
@@ -111,7 +110,7 @@ pub fn decrypt_base64(cipher_txt: &str, password: &str, nonce: &str) -> String {
     let mut key = [0; 32];
 //    let temp = nonce.last_mut()
     {
-        let temp = nonce.last_mut().unwrap();
+        let temp = nonce.first_mut().unwrap();
         *temp = temp.wrapping_add(1);
     };
 
@@ -121,11 +120,11 @@ pub fn decrypt_base64(cipher_txt: &str, password: &str, nonce: &str) -> String {
     let mut data = base64::decode(cipher_txt).unwrap();
 
     {
-        let temp = nonce.last_mut().unwrap();
+        let temp = nonce.first_mut().unwrap();
         *temp = temp.wrapping_add(1);
     }
 
-    let out = ring::aead::open_in_place(&opening_key, nonce.as_ref(), &[], 0, data.as_mut()).expect("b");
+    let out = ring::aead::open_in_place(&opening_key, &nonce[..CHACHA20_POLY1305.nonce_len()], &[], 0, data.as_mut()).expect("b_64");
 
     String::from_utf8_lossy(out).to_string()
 }
@@ -135,21 +134,20 @@ pub fn encrypt(plain_txt: &str, key: &str) -> String {
     use helper::ring::aead::CHACHA20_POLY1305;
 
     let key = base64::decode(key).unwrap();
-    let mut nonce = [0u8; 8];
+    let mut nonce = vec![0u8; CHACHA20_POLY1305.nonce_len()];
     ring::rand::SystemRandom::new().fill(&mut nonce).unwrap();
     let sealing_key = ring::aead::SealingKey::new(&CHACHA20_POLY1305, &key).unwrap();
 
     let mut data = Vec::from(plain_txt.as_bytes());
-    data.extend(vec![0u8; ring::aead::CHACHA20_POLY1305.tag_len()]);
+    data.extend(vec![0u8; CHACHA20_POLY1305.tag_len()]);
 
-    let len = ring::aead::seal_in_place(&sealing_key, nonce.as_ref(), &[], data.as_mut(), ring::aead::CHACHA20_POLY1305.tag_len()).expect("a");
+    ring::aead::seal_in_place(&sealing_key, nonce.as_ref(), &[], data.as_mut(), ring::aead::CHACHA20_POLY1305.tag_len()).expect("a");
 
     data.extend(&nonce);
     base64::encode(&data)
 }
 
 pub fn decrypt(cipher_txt: &str, key: &str) -> String {
-    use helper::ring::rand::SecureRandom;
     use helper::ring::aead::CHACHA20_POLY1305;
 
     let key = base64::decode(key).unwrap();
@@ -157,10 +155,11 @@ pub fn decrypt(cipher_txt: &str, key: &str) -> String {
     let opening_key = ring::aead::OpeningKey::new(&CHACHA20_POLY1305, &key).unwrap();
 
     let mut data = base64::decode(cipher_txt).unwrap();
-    let mut nonce = Vec::new();
-    nonce.copy_from_slice(&data[data.len() - 8..]);
+
     let len = data.len();
-    let out = ring::aead::open_in_place(&opening_key, nonce.as_ref(), &[], 0, data[..len - 8].as_mut()).expect("b");
+    let (in_place, nonce) = data.split_at_mut(len - CHACHA20_POLY1305.nonce_len());
+
+    let out = ring::aead::open_in_place(&opening_key, nonce, &[], 0, in_place).expect("b");
     String::from_utf8_lossy(out).to_string()
 }
 
@@ -170,7 +169,6 @@ pub fn restic(b2_acc_key: &str, b2_acc_id: &str, b2_bucket_name: &str, folder: &
         .env("B2_ACCOUNT_ID", b2_acc_id)
         .env("RESTIC_PASSWORD", pass)
         .arg("-r").arg(format!("b2:{}:{}", b2_bucket_name, folder));
-
     b2_command
 }
 
@@ -196,13 +194,13 @@ pub fn verify_user(db_entry: &db_tables::DbUserLogin, password_candi: &str) -> b
                          base64::decode(&db_entry.password).unwrap().as_ref()).is_ok()
 }
 
-pub fn restic_db(folder_name: &str,user: &::User) -> Result<Command, ()> {
+pub fn restic_db(folder_name: &str, user: &::User) -> Result<Command, ()> {
     use db_tables::{Users, ConnectionInfo};
 
     let con = est_db_con();
     let data: Vec<db_tables::DbEncryptedData> = Users::dsl::Users.inner_join(ConnectionInfo::table)
         .select((Users::b2_bucket_name, Users::b2_acc_key, Users::b2_acc_id, ConnectionInfo::name, ConnectionInfo::encryption_password))
-        .filter(Users::id.eq(user.id as i32))
+        .filter(Users::id.eq(user.id))
         .filter(&ConnectionInfo::name.eq(folder_name))
         .load::<db_tables::DbEncryptedData>(&con).expect("Failed to connect with db");
 
@@ -212,8 +210,8 @@ pub fn restic_db(folder_name: &str,user: &::User) -> Result<Command, ()> {
 
     let data = data.first().unwrap();
 
-    Ok(restic(&data.b2_acc_key,
-              &data.b2_acc_id,
+    Ok(restic(&decrypt(&data.b2_acc_key,&user.encryption_password),
+              &decrypt(&data.b2_acc_id,&user.encryption_password),
               &data.b2_bucket_name,
               &folder_name,
               &decrypt(&data.encryption_password, &user.encryption_password)))

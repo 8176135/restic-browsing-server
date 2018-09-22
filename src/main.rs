@@ -18,18 +18,17 @@ extern crate lazy_static;
 mod helper;
 mod db_tables;
 
-use rocket::outcome::IntoOutcome;
 use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
 use rocket::http::{Cookie, Cookies};
 
-use rocket_contrib::Template;
-use rocket_contrib::Json;
+use rocket_contrib::{Template, Json};
 
 use std::collections::HashMap;
 use std::sync::Mutex;
 
 use diesel::prelude::*;
+use rocket::response::NamedFile;
 
 #[derive(FromForm)]
 struct Login {
@@ -47,9 +46,15 @@ struct Registration {
     b2_bucket_name: String,
 }
 
+#[derive(FromForm)]
+struct AddNewForm {
+    new_repo_name: String,
+    new_repo_password: String,
+}
+
 #[derive(Debug)]
 pub struct User {
-    pub id: usize,
+    pub id: i32,
     pub encryption_password: String,
 }
 
@@ -83,7 +88,7 @@ fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
     let con = helper::est_db_con();
     let login_candidate: Option<db_tables::DbUserLogin> =
         Users::dsl::Users.filter(Users::username.eq(&login.get().username))
-            .select((Users::id, Users::password, Users::enced_enc_pass, Users::salt))
+            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass))
             .load::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db").first().cloned();
 
     if let Some(login_candidate) = login_candidate {
@@ -115,20 +120,20 @@ fn login_user(_user: User) -> Redirect {
 
 #[get("/")]
 fn user_index(user: User) -> Template {
+    use db_tables::ConnectionInfo;
+
     #[derive(Serialize)]
     struct Item {
-        id: usize,
+        id: i32,
         error_msg: String,
         configs: Vec<String>,
     }
 
     let mut item = Item { id: user.id, error_msg: String::new(), configs: Vec::new() };
 
-    if let Ok(txt) = std::fs::read_to_string(format!("resources/user{}.configs", user.id)) {
-        item.configs = txt.lines().map(|c| c.to_owned()).collect()
-    } else {
-        item.error_msg = "No configs atm".to_owned();
-    }
+    item.configs = ConnectionInfo::dsl::ConnectionInfo.select(ConnectionInfo::name)
+        .filter(ConnectionInfo::owning_user.eq(user.id))
+        .load::<String>(&helper::est_db_con()).expect("Folder name query not going through");
 
     Template::render("index", &item)
 }
@@ -153,8 +158,7 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
             .arg("-l")
             .arg("latest")
             .output().unwrap();
-
-        let mut all_files: Vec<String> = String::from_utf8(out.stdout).expect("Output not UTF-8")
+        let mut all_files: Vec<String> = String::from_utf8_lossy(&out.stdout)
             .lines().skip(1).map(|c| {
             let mut path_started = false;
             let mut folder_path = String::new();
@@ -236,7 +240,7 @@ fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) 
     if let Some(all_paths) = guard.get(&(user.id as i16, folder_name.clone())) {
         let file_paths: Vec<usize> = file_paths.into_inner();
 
-        if let Ok(mut cmd) = helper::restic_db(&folder_name,&user) {
+        if let Ok(mut cmd) = helper::restic_db(&folder_name, &user) {
             helper::delete_dir_contents(fs::read_dir(TEMP_STORAGE_PATH));
 
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", TEMP_STORAGE_PATH));
@@ -245,7 +249,6 @@ fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) 
                 //let p_buf = PathBuf::from(path);
                 cmd.arg("--include=".to_owned() + path);
             }
-            println!("{:?}", cmd);
             cmd.output().unwrap();
             let mut data_to_send = std::io::Cursor::new(Vec::<u8>::new());
             helper::zip_dir(TEMP_STORAGE_PATH, &mut data_to_send);
@@ -260,7 +263,7 @@ fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) 
 }
 
 #[post("/logout")]
-fn logout(user: User, mut cookies: Cookies) -> Flash<Redirect> {
+fn logout(_user: User, mut cookies: Cookies) -> Flash<Redirect> {
     cookies.remove_private(Cookie::named("user_id"));
     Flash::success(Redirect::to("/login"), "Successfully logged out.")
 }
@@ -281,20 +284,37 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     let (password, salt) = helper::encrypt_password(&registration.get().password);
 
     let enc = helper::get_random_stuff(32);
-
     diesel::insert_into(db_tables::Users::table)
         .values(&db_tables::DbUserIns {
             email: registration.get().email.clone(),
             username: registration.get().username.clone(),
-            enced_enc_pass: helper::encrypt_base64(&enc, &password, &salt),
-            b2_acc_id: helper::encrypt(&registration.get().b2_acc_id, &password),
-            b2_acc_key: helper::encrypt(&registration.get().b2_acc_key, &password),
+            enced_enc_pass: helper::encrypt_base64(&enc, &registration.get().password, &salt),
+            b2_acc_id: helper::encrypt(&registration.get().b2_acc_id, &enc),
+            b2_acc_key: helper::encrypt(&registration.get().b2_acc_key, &enc),
             password,
             salt,
             b2_bucket_name: registration.get().b2_bucket_name.clone(),
         }).execute(&con).expect("Not inserting into database");
 
     Flash::success(Redirect::to("/login"), "Successfully Registered")
+}
+
+
+#[post("/add_repo", data = "<name>")]
+fn add_more_repos(user: User, name: Form<AddNewForm>) -> Flash<Redirect> {
+    diesel::insert_into(db_tables::ConnectionInfo::table)
+        .values(&db_tables::ConnectionInfoIns {
+            owning_user: user.id,
+            name: name.get().new_repo_name.clone(),
+            encryption_password: helper::encrypt(&name.get().new_repo_password, &user.encryption_password),
+        }).execute(&helper::est_db_con()).expect("Adding repo not working properly");
+
+    Flash::success(Redirect::to("/"), "Successfully added new repo")
+}
+
+#[get("/public/<file..>")]
+fn files(file: std::path::PathBuf) -> Option<NamedFile> {
+    NamedFile::open(std::path::Path::new("static/").join(file)).ok()
 }
 
 lazy_static! {
@@ -306,6 +326,6 @@ fn main() {
         .mount("/",
                routes![index, logout, user_index, login_page, login_user
                ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
-               register_submit
-               ]).launch();
+               register_submit, add_more_repos, files]).launch();
+
 }
