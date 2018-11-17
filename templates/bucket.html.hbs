@@ -11,7 +11,11 @@
             crossorigin="anonymous"></script>
     <script>window.jQuery || document.write('<script src="/public/js/jquery-3.3.1.min.js"><\/script>')</script>
     <script src="/public/js/jquery.bonsai.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="/public/css/bonsai.css">
+    <link rel="stylesheet" href="/public/css/main.css">
+    <link rel="stylesheet" href="/public/css/bucket.css">
 </head>
 <body>
 <h1>Repository: {{repo_name}}</h1>
@@ -21,12 +25,18 @@
     {{{files}}}
 </ul>
 
-<button onclick="download()">Download</button>
-<a href="/"><button>Back</button></a>
-<form action="/logout" method="post" accept-charset="utf-8">
-    <input type="submit" name="logout" id="logout" value="logout"/>
+<button onclick="download()" class="btn download">Download</button>
+
+<a class="back_btn" href="/">
+    <button class="btn"><i class="material-icons left">keyboard_arrow_left</i>Back to List</button>
+</a>
+<form class="logout" action="/logout" method="post" accept-charset="utf-8">
+    <button class="btn red waves-effect waves-dark darken-2" type="submit" name="logout" id="logout">Logout
+        <i class="material-icons right">exit_to_app</i></button>
 </form>
 <script>const repo_name = "{{repo_name}}";</script>
 <script src="/public/js/bucket_items.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" defer></script>
 </body>
 </html>

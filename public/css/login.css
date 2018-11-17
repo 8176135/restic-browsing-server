@@ -1,0 +1,33 @@
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#login_panel {
+  width: 100%;
+}
+#login_panel form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 17pt;
+}
+
+.center {
+  display: flex;
+  width: 90%;
+  max-width: 500px;
+  margin: auto;
+  justify-content: space-between;
+}
+
+.logout {
+  grid-area: rHeader;
+  align-self: center;
+}
+
+/*# sourceMappingURL=login.css.map */

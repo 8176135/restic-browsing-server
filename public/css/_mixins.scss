@@ -1,0 +1,13 @@
+
+@mixin input($txt_bg_clr, $darken_on_active) {
+  background-color: $txt_bg_clr;
+  &:hover {
+    background-color: lighten($txt_bg_clr, 10%);
+  }
+
+  &:active {
+    @if $darken_on_active{
+      background-color: darken($txt_bg_clr, 5%);
+    }
+  }
+}

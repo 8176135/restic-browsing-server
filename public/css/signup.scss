@@ -1,0 +1,45 @@
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+//
+//input[type="submit"], input[type="button"] {
+//  padding: 10px 16px;
+//  border-radius: 5px;
+//  font-size: 18pt;
+//  cursor: pointer;
+//  transition: background-color 0.1s linear;
+//}
+
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 750px;
+  width: 95%;
+  margin: auto;
+}
+
+form .input-field {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.bot_row {
+  width: 100%;
+  display: flex;
+}
+
+#form_submit_btn {
+  flex: 3 0 auto;
+}
+
+#back_btn {
+  flex: 1 1 auto;
+}
+
+//form input {
+//  font-size: 20px;
+//  padding: 10px;
+//  margin: 10px;
+//}

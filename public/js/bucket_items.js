@@ -13,12 +13,12 @@ list.on("change", "input",
     });
 
 function checkAllChildren(checkbox, isChecked) {
-    checkbox.siblings("ul").find("input").prop("checked", isChecked);
+    checkbox.parent().siblings("ul").find("input").prop("checked", isChecked).prop("indeterminate", false);
 }
 
 function makeParentTrue(checkbox) {
     let makeTrue = true;
-    let items = checkbox.parent().siblings().children("input");
+    let items =  checkbox.parent().parent().siblings().children("label").children("input");
 
     for (var i = 0; i < items.length; i++) {
         if (!items[i].checked || $(items[i]).prop("indeterminate")) {
@@ -28,7 +28,7 @@ function makeParentTrue(checkbox) {
     }
 
     if (makeTrue) {
-        let curCheck = checkbox.parent().parent().siblings("input");
+        let curCheck =  checkbox.parent().parent().parent().siblings("label").children("input");
         if (curCheck.length) {
             curCheck.prop("indeterminate", false);
             curCheck.prop("checked", true);
@@ -41,7 +41,7 @@ function makeParentTrue(checkbox) {
 
 function makeParentFalse(checkbox) {
     let makeFalse = true;
-    let items = checkbox.parent().siblings().children("input");
+    let items = checkbox.parent().parent().siblings().children("label").children("input");
 
     for (var i = 0; i < items.length; i++) {
         if (items[i].checked || $(items[i]).prop("indeterminate")) {
@@ -51,7 +51,7 @@ function makeParentFalse(checkbox) {
     }
 
     if (makeFalse) {
-        let curCheck = checkbox.parent().parent().siblings("input");
+        let curCheck = checkbox.parent().parent().parent().siblings("label").children("input");
         if (curCheck.length) {
             curCheck.prop("indeterminate", false);
             curCheck.prop("checked", false);
@@ -63,7 +63,7 @@ function makeParentFalse(checkbox) {
 }
 
 function makeParentIndeterminate(checkbox) {
-    let item = checkbox.parent().parent().siblings("input");
+    let item = checkbox.parent().parent().parent().siblings("label").children("input");
     if (item.length) {
         item.prop("indeterminate", true);
         item.prop("checked", false);
@@ -74,13 +74,13 @@ function makeParentIndeterminate(checkbox) {
 function download() {
     let files_to_download = [];
 
-    getChildCheckbox($("#list").children("li").children("input"), files_to_download);
+    getChildCheckbox($("#list").children("li").children("label").children("input"), files_to_download);
 
     $.ajax({
         type: "POST",
         data: JSON.stringify(files_to_download),
         contentType: "application/json; charset=utf-8",
-        xhrFields:{
+        xhrFields: {
             responseType: 'blob'
         },
         url: window.location.pathname.substring(window.location.pathname.lastIndexOf('/') + 1) + "/download",
@@ -103,7 +103,7 @@ function download() {
 }
 
 function getChildCheckbox(parentCheck, tally) {
-    let list_of_boxes = parentCheck.siblings("ul").children("li").children("input");
+    let list_of_boxes = parentCheck.parent().siblings("ul").children("li").children("label").children("input");
     let indert_boxes = list_of_boxes.filter((i, c) => {
         return $(c).prop("indeterminate");
     });

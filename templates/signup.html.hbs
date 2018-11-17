@@ -3,22 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
+    <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/main.css">
+    <link rel="stylesheet" href="/public/css/signup.css">
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
-<form action="register_submit" method="post" onsubmit="validation()">
-    <input type="text" name="username" id="username" placeholder="Username" maxlength="25">
-    <input type="password" name="password" id="password" placeholder="Password">
-    <input type="password" id="passConf" placeholder="Password Confirm">
-    <input type="email" name="email" id="email" placeholder="Email" maxlength="100">
-    <input type="text" name="b2_acc_key" id="b2_acc_key" placeholder="B2 Account Key" maxlength="100" autocomplete="off">
-    <input type="text" name="b2_acc_id" id="b2_acc_id" placeholder="B2 Account ID" maxlength="100" autocomplete="off">
-    <input type="text" name="b2_bucket_name" id="b2_bucket_name" placeholder="B2 Bucket Name" maxlength="100">
-    <input type="submit" id="submit" value="Submit">
+<form action="register_submit" method="post">
+    <div class="input-field">
+        <input type="text" name="username" id="username" class="validate" minlength="4" maxlength="25" required>
+        <label for="username">Username</label>
+    </div>
+    <div class="input-field">
+        <input type="password" name="password" id="password" class="validate" minlength="6" autocomplete="off" value="" required>
+        <label for="password">Password</label>
+    </div>
+    <div class="input-field">
+        <input type="password" id="pass_conf" class="validate" autocomplete="off" value="" required>
+        <label for="pass_conf">Confirm Password</label>
+    </div>
+    <div class="input-field">
+        <input type="email" name="email" id="email" class="validate" maxlength="100" required>
+        <label for="email">Email</label>
+    </div>
+    <div class="input-field">
+        <input type="text" name="b2_acc_key" id="b2_acc_key" class="validate" maxlength="100" autocomplete="off" required>
+        <label for="b2_acc_key">B2 Account Key</label>
+    </div>
+    <div class="input-field">
+        <input type="text" name="b2_acc_id" id="b2_acc_id" class="validate" maxlength="100" autocomplete="off" required>
+        <label for="b2_acc_id">B2 Account ID</label>
+    </div>
+    <div class="input-field">
+        <input type="text" name="b2_bucket_name" id="b2_bucket_name" maxlength="100" class="validate" required>
+        <label for="b2_bucket_name">B2 Account Name</label>
+    </div>
+    <div class="bot_row">
+        <a href="login" id="back_btn">
+            <button class="btn waves-effect waves-dark red darken-2" type="button" >Login Page
+                <i class="material-icons left">keyboard_arrow_left</i>
+            </button>
+        </a>
+        <button class="btn waves-effect waves-dark green darken-2" type="submit" id="form_submit_btn">
+            <i class="material-icons right">send</i>Register
+        </button>
+    </div>
+
 </form>
-<script>
-    function validation() {
-        return document.getElementById("password").value === document.getElementById("passConf").value;
-    }
-</script>
+<script src="/public/js/register_validation.js"></script>
 </body>
 </html>

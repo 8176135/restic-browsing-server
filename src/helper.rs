@@ -207,7 +207,6 @@ pub fn restic_db(folder_name: &str, user: &::User) -> Result<Command, ()> {
     if data.is_empty() {
         return Err(());
     }
-
     let data = data.first().unwrap();
 
     Ok(restic(&decrypt(&data.b2_acc_key,&user.encryption_password),

@@ -1,0 +1,73 @@
+.add_repo_box {
+  width: 95%;
+  max-width: 600px;
+  margin: auto;
+}
+
+//body {
+//  display: grid;
+//  grid-template-columns: 10% 1fr 3fr 1fr 10%;
+//  grid-template-rows: 175px 1fr min-content 300px;
+//  grid-template-areas:  ". . header rHeader ."
+//                        ". content content content ."
+//                        ". . addbox . ."
+//                        "footer footer footer footer footer";
+//}
+//
+//h1 {
+//  grid-area: header;
+//  text-align: center;
+//  margin: 0;
+//  padding: 0;
+//  align-self: center;
+//  -webkit-user-select: none;
+//  -moz-user-select: none;
+//  -ms-user-select: none;
+//  user-select: none;
+//}
+
+.repo_list_content {
+  grid-area: content;
+  max-width: 900px;
+  justify-self: center;
+  width: 100%;
+  .line {
+    width: 100%;
+    display: flex;
+    .btn.repo_name {
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
+      background-color: #00796b;
+      width: 100%;
+      text-align: left;
+      &:hover {
+        background-color: #009688;
+      }
+    }
+    .btn.delete {
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+      background-color: #d32f2f;
+      &:hover {
+        background-color: #f44336;
+      }
+    }
+  }
+}
+
+.add_repo_box {
+grid-area: addbox;
+  align-self: end;
+  justify-self: center;
+  border: solid white 1px;
+  border-radius: 2px;
+  padding: 15px;
+
+  h4 {
+    font-size: 18pt;
+    margin-top: 10px;
+    margin-bottom: 30px;
+  }
+}
+
+

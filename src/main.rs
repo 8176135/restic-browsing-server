@@ -1,7 +1,6 @@
-#![feature(plugin, custom_derive)]
-#![plugin(rocket_codegen)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
-//#[macro_use]
+#[macro_use]
 extern crate rocket;
 extern crate rocket_contrib;
 
@@ -22,7 +21,7 @@ use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
 use rocket::http::{Cookie, Cookies};
 
-use rocket_contrib::{Template, Json};
+use rocket_contrib::{templates::Template, json::Json};
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -87,14 +86,14 @@ fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
 
     let con = helper::est_db_con();
     let login_candidate: Option<db_tables::DbUserLogin> =
-        Users::dsl::Users.filter(Users::username.eq(&login.get().username))
+        Users::dsl::Users.filter(Users::username.eq(&login.username))
             .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass))
             .load::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db").first().cloned();
 
     if let Some(login_candidate) = login_candidate {
-        if helper::verify_user(&login_candidate, &login.get().password) {
+        if helper::verify_user(&login_candidate, &login.password) {
             cookies.add_private(Cookie::new("user_id", login_candidate.id.to_string()));
-            cookies.add_private(Cookie::new("repo_encryption_password", helper::decrypt_base64(&login_candidate.enced_enc_pass, &login.get().password, &login_candidate.salt)));
+            cookies.add_private(Cookie::new("repo_encryption_password", helper::decrypt_base64(&login_candidate.enced_enc_pass, &login.password, &login_candidate.salt)));
             Flash::success(Redirect::to("/"), "Successfully logged in.")
         } else {
             Flash::error(Redirect::to("/login"), "Username exists, invalid password though.")
@@ -138,15 +137,14 @@ fn user_index(user: User) -> Template {
     Template::render("index", &item)
 }
 
-#[get("/bucket/<_bucket_num>", rank = 2)]
-fn get_bucket_not_logged(_bucket_num: usize) -> Redirect {
+#[get("/bucket/<_folder_name>", rank = 2)]
+fn get_bucket_not_logged(_folder_name: String) -> Redirect {
     Redirect::to("/")
 }
 
 #[get("/bucket/<folder_name>")]
 fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound<String>> {
     use std::path::PathBuf;
-
     #[derive(Serialize)]
     struct BucketsData {
         repo_name: String,
@@ -165,12 +163,14 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
             for item in c.split(" ") {
                 if path_started || item.chars().next().unwrap_or('-') == '/' {
                     path_started = true;
+                    folder_path.push(' ');
                     folder_path.push_str(item);
                 }
             }
             if c.chars().next().unwrap() == 'd' {
                 folder_path.push('/');
             }
+            folder_path.remove(0);
             folder_path
         }).collect();
 
@@ -196,14 +196,14 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
                 if path_str.ends_with('/') {
                     path.strip_prefix(&cur_folder).unwrap().components().for_each(|c| {
                         final_html.push_str(
-                            &format!("<li><input type=\"checkbox\" data-folder-num=\"{}\">{}<ul>",
+                            &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span></label><ul>",
                                      idx, c.as_os_str().to_str().unwrap()));
                         counter += 1;
                     });
                     cur_folder = path;
                 } else {
                     final_html.push_str(
-                        &format!("<li><input type=\"checkbox\" data-folder-num=\"{}\">{}</li>",
+                        &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span></label></li>",
                                  idx, path.file_name().unwrap().to_str().unwrap()));
                 }
             }
@@ -212,13 +212,13 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
             }
         }
 
-        for file in all_files.iter_mut() {
-            if file.ends_with(")") {
-                let idx = file.rfind("(").expect("No ending brackets?");
-                file.replace_range(idx.., "");
-            }
-            file.pop();
-        }
+//        for file in all_files.iter_mut() {
+//            if file.ends_with(")") {
+//                let idx = file.rfind("(").expect("No ending brackets?");
+//                file.replace_range(idx.., "");
+//            }
+//            file.pop();
+//        }
         let mut guard = PATH_CACHE.lock().unwrap();
         guard.insert((user.id as i16, folder_name.clone()), all_files);
 
@@ -247,9 +247,11 @@ fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) 
             for path_idx in file_paths {
                 let path = &all_paths[path_idx];
                 //let p_buf = PathBuf::from(path);
+                println!("Path: {}", path);
                 cmd.arg("--include=".to_owned() + path);
             }
-            cmd.output().unwrap();
+
+            println!("{}",String::from_utf8_lossy(&cmd.output().unwrap().stderr));
             let mut data_to_send = std::io::Cursor::new(Vec::<u8>::new());
             helper::zip_dir(TEMP_STORAGE_PATH, &mut data_to_send);
 
@@ -281,19 +283,19 @@ fn register() -> Template {
 #[post("/register_submit", data = "<registration>")]
 fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     let con = helper::est_db_con();
-    let (password, salt) = helper::encrypt_password(&registration.get().password);
+    let (password, salt) = helper::encrypt_password(&registration.password);
 
     let enc = helper::get_random_stuff(32);
     diesel::insert_into(db_tables::Users::table)
         .values(&db_tables::DbUserIns {
-            email: registration.get().email.clone(),
-            username: registration.get().username.clone(),
-            enced_enc_pass: helper::encrypt_base64(&enc, &registration.get().password, &salt),
-            b2_acc_id: helper::encrypt(&registration.get().b2_acc_id, &enc),
-            b2_acc_key: helper::encrypt(&registration.get().b2_acc_key, &enc),
+            email: registration.email.clone(),
+            username: registration.username.clone(),
+            enced_enc_pass: helper::encrypt_base64(&enc, &registration.password, &salt),
+            b2_acc_id: helper::encrypt(&registration.b2_acc_id, &enc),
+            b2_acc_key: helper::encrypt(&registration.b2_acc_key, &enc),
             password,
             salt,
-            b2_bucket_name: registration.get().b2_bucket_name.clone(),
+            b2_bucket_name: registration.b2_bucket_name.clone(),
         }).execute(&con).expect("Not inserting into database");
 
     Flash::success(Redirect::to("/login"), "Successfully Registered")
@@ -305,8 +307,8 @@ fn add_more_repos(user: User, name: Form<AddNewForm>) -> Flash<Redirect> {
     diesel::insert_into(db_tables::ConnectionInfo::table)
         .values(&db_tables::ConnectionInfoIns {
             owning_user: user.id,
-            name: name.get().new_repo_name.clone(),
-            encryption_password: helper::encrypt(&name.get().new_repo_password, &user.encryption_password),
+            name: name.new_repo_name.clone(),
+            encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
         }).execute(&helper::est_db_con()).expect("Adding repo not working properly");
 
     Flash::success(Redirect::to("/"), "Successfully added new repo")
@@ -314,7 +316,7 @@ fn add_more_repos(user: User, name: Form<AddNewForm>) -> Flash<Redirect> {
 
 #[get("/public/<file..>")]
 fn files(file: std::path::PathBuf) -> Option<NamedFile> {
-    NamedFile::open(std::path::Path::new("static/").join(file)).ok()
+    NamedFile::open(std::path::Path::new("public/").join(file)).ok()
 }
 
 lazy_static! {

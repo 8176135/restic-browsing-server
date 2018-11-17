@@ -3,18 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Login page</title>
+    <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/main.css">
+    <link rel="stylesheet" href="/public/css/login.css">
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
 <body>
-Hello, this is our message: {{flash}}
-<div>
+<div id="login_panel">
     <form action="/login" method="post" accept-charset="utf-8">
-        <label for="username">Username: </label>
-        <input type="text" name="username" id="username">
-        <label>Password: </label>
-        <input type="password" name="password" id="password">
-        <input type="submit" value="SUBMIT">
+        <div class="center">
+            <div class="input-field">
+                <input type="text" name="username" id="username" required>
+                <label for="username">Username</label>
+            </div>
+            <div class="input-field">
+                <input type="password" name="password" id="password" required>
+                <label for="password">Password</label>
+            </div>
+
+        </div>
+        <button class="waves-effect waves-dark btn green darken-2 text-white" type="submit">Login
+            <i class="material-icons right">keyboard_arrow_right</i></button>
+
+        <a href="register">
+            <button type="button" class="waves-effect waves-dark btn red darken-2 text-white" style="margin-top: 10px;">
+                Register</button>
+        </a>
     </form>
-    <a href="register">Register</a>
 </div>
+
+{{#if flash}}
+    <div class="message_popup {{status}}">
+        Message: {{flash}}
+    </div>
+{{/if}}
+
 </body>
+
 </html>

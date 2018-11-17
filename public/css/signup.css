@@ -1,0 +1,33 @@
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 750px;
+  width: 95%;
+  margin: auto;
+}
+
+form .input-field {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.bot_row {
+  width: 100%;
+  display: flex;
+}
+
+#form_submit_btn {
+  flex: 3 0 auto;
+}
+
+#back_btn {
+  flex: 1 1 auto;
+}
+
+/*# sourceMappingURL=signup.css.map */

@@ -1,0 +1,80 @@
+@import "mixins";
+
+body {
+    background-color: black;
+    color: white;
+    font-family: Electrolize, sans-serif;
+    margin: 0;
+    height: 100vh;
+
+  display: grid;
+  grid-template-columns: 10% 1fr 3fr 1fr 10%;
+  grid-template-rows: 175px max-content auto min-content 300px;
+  grid-template-areas:  ". lHeader header rHeader ."
+                        ". content content content ."
+                        ". . . . ."
+                        ". . addbox . ."
+                        "footer footer footer footer footer";
+}
+
+input {
+  font-family: Electrolize, sans-serif;
+}
+label {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  &.active {
+    cursor: default !important;
+  }
+}
+
+h1 {
+  grid-area: header;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.logout {
+  grid-area: rHeader;
+  align-self: center;
+}
+
+//input[type="submit"], input[type="button"], button {
+//    @include input(#111, true);
+//    font-family: Electrolize, sans-serif;
+//    border: none;
+//    outline: 0;
+//    color: #EEE;
+//    letter-spacing: 1px;
+//    &.red {
+//        @include input(#490000, true);
+//    }
+//    &.green {
+//        @include input(#00460f, true);
+//    }
+//    &.blue {
+//        @include input(#00183d, true);
+//    }
+//}
+//
+//input[type="text"], input[type="password"], input[type="email"] {
+//    @include input(#111, false);
+//    color: white;
+//    outline: 0;
+//    border: none;
+//    font-family: Electrolize, sans-serif;
+//    border-radius: 5px;
+//    overflow: hidden;
+//    transition: background-color 0.1s linear;
+//    &.red {
+//        @include input(#2f0000, false);
+//    }
+//}

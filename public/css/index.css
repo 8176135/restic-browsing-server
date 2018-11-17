@@ -1,0 +1,50 @@
+.add_repo_box {
+  width: 95%;
+  max-width: 600px;
+  margin: auto;
+}
+
+.repo_list_content {
+  grid-area: content;
+  max-width: 900px;
+  justify-self: center;
+  width: 100%;
+}
+.repo_list_content .line {
+  width: 100%;
+  display: flex;
+}
+.repo_list_content .line .btn.repo_name {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+  background-color: #00796b;
+  width: 100%;
+  text-align: left;
+}
+.repo_list_content .line .btn.repo_name:hover {
+  background-color: #009688;
+}
+.repo_list_content .line .btn.delete {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  background-color: #d32f2f;
+}
+.repo_list_content .line .btn.delete:hover {
+  background-color: #f44336;
+}
+
+.add_repo_box {
+  grid-area: addbox;
+  align-self: end;
+  justify-self: center;
+  border: solid white 1px;
+  border-radius: 2px;
+  padding: 15px;
+}
+.add_repo_box h4 {
+  font-size: 18pt;
+  margin-top: 10px;
+  margin-bottom: 30px;
+}
+
+/*# sourceMappingURL=index.css.map */

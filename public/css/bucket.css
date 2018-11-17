@@ -1,0 +1,23 @@
+.back_btn {
+  grid-area: lHeader;
+  justify-self: right;
+  align-self: center;
+}
+
+.download {
+  grid-area: addbox;
+  max-width: 500px;
+  justify-self: center;
+  width: 100%;
+}
+
+.collapsed > ul > .collapsed {
+  display: none;
+}
+
+#list {
+  grid-row: 2;
+  grid-column: 3;
+}
+
+/*# sourceMappingURL=bucket.css.map */
