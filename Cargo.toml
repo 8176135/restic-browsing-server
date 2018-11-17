@@ -1,5 +1,5 @@
 [package]
-name = "duplicati_proxy"
+name = "restic_browsing_server"
 version = "0.1.0"
 authors = ["Hand-of-Cthulhu <3rdhandofcthulhu@gmail.com>"]
 
