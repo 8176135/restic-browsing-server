@@ -247,11 +247,10 @@ fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) 
             for path_idx in file_paths {
                 let path = &all_paths[path_idx];
                 //let p_buf = PathBuf::from(path);
-                println!("Path: {}", path);
                 cmd.arg("--include=".to_owned() + path);
             }
 
-            println!("{}",String::from_utf8_lossy(&cmd.output().unwrap().stderr));
+            println!("{}", String::from_utf8_lossy(&cmd.output().unwrap().stderr));
             let mut data_to_send = std::io::Cursor::new(Vec::<u8>::new());
             helper::zip_dir(TEMP_STORAGE_PATH, &mut data_to_send);
 
@@ -329,5 +328,4 @@ fn main() {
                routes![index, logout, user_index, login_page, login_user
                ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
                register_submit, add_more_repos, files]).launch();
-
 }

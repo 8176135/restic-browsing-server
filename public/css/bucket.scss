@@ -11,6 +11,10 @@
   width: 100%;
 }
 
+.invisible {
+  display: none !important;
+}
+
 .collapsed > ul > .collapsed {
   display: none;
 

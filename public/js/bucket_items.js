@@ -20,7 +20,7 @@ function makeParentTrue(checkbox) {
     let makeTrue = true;
     let items =  checkbox.parent().parent().siblings().children("label").children("input");
 
-    for (var i = 0; i < items.length; i++) {
+    for (let i = 0; i < items.length; i++) {
         if (!items[i].checked || $(items[i]).prop("indeterminate")) {
             makeTrue = false;
             break;
@@ -76,6 +76,14 @@ function download() {
 
     getChildCheckbox($("#list").children("li").children("label").children("input"), files_to_download);
 
+    if (files_to_download.length === 0) {
+
+        return;
+    }
+
+    $(".btn.download").addClass("invisible");
+    $(".progress.download").removeClass("invisible");
+
     $.ajax({
         type: "POST",
         data: JSON.stringify(files_to_download),
@@ -98,6 +106,7 @@ function download() {
         error: function (jqXHR, textErr, err) {
             console.log(textErr);
             console.log(err);
+
         }
     });
 }
