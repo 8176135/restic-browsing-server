@@ -2,3 +2,4 @@
 **/*.rs.bk
 database_url
 resources
+/temp_download

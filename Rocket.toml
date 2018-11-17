@@ -1,0 +1,6 @@
+[global]
+address = "127.0.0.1"
+port = 13701
+
+[production]
+secret_key = "o0WmI4QYaEs+yOmttHPvm1wH/y6eRlBPVrMpcoE2RVw="

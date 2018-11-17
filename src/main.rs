@@ -162,8 +162,10 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
             let mut folder_path = String::new();
             for item in c.split(" ") {
                 if path_started || item.chars().next().unwrap_or('-') == '/' {
+                    if path_started {
+                        folder_path.push(' ');
+                    }
                     path_started = true;
-                    folder_path.push(' ');
                     folder_path.push_str(item);
                 }
             }
