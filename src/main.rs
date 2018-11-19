@@ -14,6 +14,8 @@ extern crate serde;
 #[macro_use]
 extern crate lazy_static;
 
+extern crate regex;
+
 mod helper;
 mod db_tables;
 
@@ -28,6 +30,8 @@ use std::sync::Mutex;
 
 use diesel::prelude::*;
 use rocket::response::NamedFile;
+
+use regex::Regex;
 
 #[derive(FromForm)]
 struct Login {
@@ -58,6 +62,13 @@ pub struct User {
 }
 
 const TEMP_STORAGE_PATH: &str = "temp_download/";
+
+lazy_static! {
+    static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<String>>> = Mutex::new(HashMap::new());
+    static ref B2_APP_KEY_TEST: Regex = Regex::new("[^\\w\\/+=-]").unwrap();
+    static ref B2_APP_ID_TEST: Regex = Regex::new("[^\\da-fA-F]").unwrap();
+    static ref B2_BUCKET_NAME_TEST: Regex = Regex::new("[^\\w-.\\/]").unwrap();
+}
 
 impl<'a, 'r> FromRequest<'a, 'r> for User {
     type Error = ();
@@ -214,13 +225,6 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
             }
         }
 
-//        for file in all_files.iter_mut() {
-//            if file.ends_with(")") {
-//                let idx = file.rfind("(").expect("No ending brackets?");
-//                file.replace_range(idx.., "");
-//            }
-//            file.pop();
-//        }
         let mut guard = PATH_CACHE.lock().unwrap();
         guard.insert((user.id as i16, folder_name.clone()), all_files);
 
@@ -248,7 +252,6 @@ fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) 
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", TEMP_STORAGE_PATH));
             for path_idx in file_paths {
                 let path = &all_paths[path_idx];
-                //let p_buf = PathBuf::from(path);
                 cmd.arg("--include=".to_owned() + path);
             }
 
@@ -287,6 +290,19 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     let (password, salt) = helper::encrypt_password(&registration.password);
 
     let enc = helper::get_random_stuff(32);
+
+    if B2_APP_KEY_TEST.is_match(&registration.b2_acc_key) {
+        return Flash::error(Redirect::to("/register"), "Invalid characters in Account/App Key");
+    }
+
+    if B2_APP_ID_TEST.is_match(&registration.b2_acc_id) {
+        return Flash::error(Redirect::to("/register"), "Invalid characters in Account/App ID");
+    }
+
+    if B2_BUCKET_NAME_TEST.is_match(&registration.b2_bucket_name) {
+        return Flash::error(Redirect::to("/register"), "Invalid characters in Bucket Name");
+    }
+
     diesel::insert_into(db_tables::Users::table)
         .values(&db_tables::DbUserIns {
             email: registration.email.clone(),
@@ -309,7 +325,7 @@ fn add_more_repos(user: User, name: Form<AddNewForm>) -> Flash<Redirect> {
         .values(&db_tables::ConnectionInfoIns {
             owning_user: user.id,
             name: name.new_repo_name.clone(),
-            encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
+            repo_encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
         }).execute(&helper::est_db_con()).expect("Adding repo not working properly");
 
     Flash::success(Redirect::to("/"), "Successfully added new repo")
@@ -320,9 +336,6 @@ fn files(file: std::path::PathBuf) -> Option<NamedFile> {
     NamedFile::open(std::path::Path::new("public/").join(file)).ok()
 }
 
-lazy_static! {
-    static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<String>>> = Mutex::new(HashMap::new());
-}
 fn main() {
     rocket::ignite()
         .attach(Template::fairing())

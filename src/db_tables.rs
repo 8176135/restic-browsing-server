@@ -52,7 +52,7 @@ pub struct DbUserLogin {
 pub struct ConnectionInfoIns {
     pub owning_user: i32,
     pub name: String,
-    pub encryption_password: String,
+    pub repo_encryption_password: String,
 }
 
 #[derive(Queryable, Debug, Clone)]
