@@ -325,7 +325,7 @@ fn add_more_repos(user: User, name: Form<AddNewForm>) -> Flash<Redirect> {
         .values(&db_tables::ConnectionInfoIns {
             owning_user: user.id,
             name: name.new_repo_name.clone(),
-            repo_encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
+            encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
         }).execute(&helper::est_db_con()).expect("Adding repo not working properly");
 
     Flash::success(Redirect::to("/"), "Successfully added new repo")
