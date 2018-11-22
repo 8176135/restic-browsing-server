@@ -209,8 +209,8 @@ pub fn restic_db(folder_name: &str, user: &::User) -> Result<Command, ()> {
     }
     let data = data.first().unwrap();
 
-    Ok(restic(&decrypt(&data.b2_acc_key,&user.encryption_password),
-              &decrypt(&data.b2_acc_id,&user.encryption_password),
+    Ok(restic(&decrypt(&data.b2_acc_key, &user.encryption_password),
+              &decrypt(&data.b2_acc_id, &user.encryption_password),
               &data.b2_bucket_name,
               &folder_name,
               &decrypt(&data.encryption_password, &user.encryption_password)))

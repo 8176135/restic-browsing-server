@@ -6,12 +6,13 @@ body {
   height: 100vh;
   display: grid;
   grid-template-columns: 10% 1fr 3fr 1fr 10%;
-  grid-template-rows: 175px max-content auto min-content 300px;
+  grid-template-rows: 175px max-content auto min-content 200px;
   grid-template-areas: ". lHeader header rHeader ." ". content content content ." ". . . . ." ". . addbox . ." "footer footer footer footer footer";
 }
 
 input {
   font-family: Electrolize, sans-serif;
+  color: white;
 }
 
 label {
@@ -39,6 +40,15 @@ h1 {
 .logout {
   grid-area: rHeader;
   align-self: center;
+}
+
+.modal {
+  max-width: 1000px;
+}
+
+.footer {
+  height: 100%;
+  grid-area: footer;
 }
 
 /*# sourceMappingURL=main.css.map */

@@ -1,4 +1,5 @@
 const list = $("#list");
+const edit_repo_modal = $("#edit_repo_modal");
 list.find("input")
     .each((i, c) => $(c).prop("checked", false).prop("indeterminate", false));
 list.on("change", "input",

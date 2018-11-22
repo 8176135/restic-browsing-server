@@ -52,7 +52,18 @@
         background-color: #f44336;
       }
     }
+    .btn.edit {
+      border-radius: 0;
+      background-color: #f57c00;
+      &:hover {
+        background-color: #ff9800;
+      }
+    }
   }
+}
+
+.edge_btn {
+  flex: 0 0 auto;
 }
 
 .add_repo_box {
@@ -70,4 +81,17 @@ grid-area: addbox;
   }
 }
 
+.modal-content {
+  h4 {
+    font-size: 18pt;
+    margin-top: 10px;
+    margin-bottom: 30px;
+  }
+  &.error {
+    background-color: #b71c1c;
+  }
+  &.success {
+    background-color: #1b5e20;
+  }
+}
 

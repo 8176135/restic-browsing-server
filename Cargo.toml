@@ -15,6 +15,7 @@ diesel = { version = "*", features = ["mysql"] }
 base64 = "*"
 ring = "*"
 regex = "*"
+urlencoding = "*"
 #serde_json = "*"
 
 [dependencies.rocket_contrib]

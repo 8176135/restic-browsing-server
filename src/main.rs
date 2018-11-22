@@ -18,6 +18,7 @@ extern crate regex;
 
 mod helper;
 mod db_tables;
+mod handlebar_helpers;
 
 use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
@@ -53,6 +54,12 @@ struct Registration {
 struct AddNewForm {
     new_repo_name: String,
     new_repo_password: String,
+}
+
+#[derive(FromForm)]
+struct EditRepoForm {
+    edit_repo_name: String,
+    edit_repo_password: String,
 }
 
 #[derive(Debug)]
@@ -104,7 +111,11 @@ fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
     if let Some(login_candidate) = login_candidate {
         if helper::verify_user(&login_candidate, &login.password) {
             cookies.add_private(Cookie::new("user_id", login_candidate.id.to_string()));
-            cookies.add_private(Cookie::new("repo_encryption_password", helper::decrypt_base64(&login_candidate.enced_enc_pass, &login.password, &login_candidate.salt)));
+            cookies.add_private(Cookie::new("repo_encryption_password",
+                                            helper::decrypt_base64(
+                                                &login_candidate.enced_enc_pass,
+                                                &login.password,
+                                                &login_candidate.salt)));
             Flash::success(Redirect::to("/"), "Successfully logged in.")
         } else {
             Flash::error(Redirect::to("/login"), "Username exists, invalid password though.")
@@ -124,12 +135,12 @@ fn login_page(flash: Option<FlashMessage>) -> Template {
 }
 
 #[get("/login")]
-fn login_user(_user: User) -> Redirect {
+fn already_logged_in(_user: User) -> Redirect {
     Redirect::to("/")
 }
 
 #[get("/")]
-fn user_index(user: User) -> Template {
+fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
     use db_tables::ConnectionInfo;
 
     #[derive(Serialize)]
@@ -137,10 +148,21 @@ fn user_index(user: User) -> Template {
         id: i32,
         error_msg: String,
         configs: Vec<String>,
+        flash: Option<String>,
+        status: Option<String>,
     }
 
-    let mut item = Item { id: user.id, error_msg: String::new(), configs: Vec::new() };
-
+    let (flash, status) = match flash {
+        None => (None, None),
+        Some(c) => (Some(c.msg().to_owned()), Some(c.name().to_owned()))
+    };
+    let mut item = Item {
+        id: user.id,
+        error_msg: String::new(),
+        configs: Vec::new(),
+        flash,
+        status,
+    };
     item.configs = ConnectionInfo::dsl::ConnectionInfo.select(ConnectionInfo::name)
         .filter(ConnectionInfo::owning_user.eq(user.id))
         .load::<String>(&helper::est_db_con()).expect("Folder name query not going through");
@@ -154,7 +176,7 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
 }
 
 #[get("/bucket/<folder_name>")]
-fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound<String>> {
+fn get_bucket_data(user: User, folder_name: String) -> Result<Template, Flash<Redirect>> {
     use std::path::PathBuf;
     #[derive(Serialize)]
     struct BucketsData {
@@ -167,6 +189,19 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
             .arg("-l")
             .arg("latest")
             .output().unwrap();
+
+        let error_str = String::from_utf8_lossy(&out.stderr);
+        println!("Error str: {}", error_str);
+        if error_str.find("b2_download_file_by_name: 404:").is_some() {
+            return Err(Flash::error(
+                Redirect::to("/"),
+                "Repository not found on B2, are you sure you spelt the name correctly? (Case Sensitive)"));
+        }
+        if error_str.find("wrong password").is_some() {
+            return Err(Flash::error(
+                Redirect::to("/"),
+                "Repository password is incorrect"));
+        }
         let mut all_files: Vec<String> = String::from_utf8_lossy(&out.stdout)
             .lines().skip(1).map(|c| {
             let mut path_started = false;
@@ -183,8 +218,8 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
             if c.chars().next().unwrap() == 'd' {
                 folder_path.push('/');
             }
-            folder_path.remove(0);
-            folder_path
+//            println!("folder_path: {}", folder_path);
+            folder_path.trim().to_owned()
         }).collect();
 
         let mut final_html = String::new();
@@ -235,7 +270,9 @@ fn get_bucket_data(user: User, folder_name: String) -> Result<Template, NotFound
                                 files: final_html,
                             }))
     } else {
-        Err(NotFound("Repo not found".to_owned()))
+        Err(Flash::error(
+            Redirect::to("/"),
+            format!("Repository [{}] not in repo list, add the repo in the <Add new repository> box!", folder_name)))
     }
 }
 
@@ -318,17 +355,90 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     Flash::success(Redirect::to("/login"), "Successfully Registered")
 }
 
+#[post("/edit_repo/<repo_name>", data = "<new_data>")]
+fn edit_repo(user: User, repo_name: String, new_data: Form<EditRepoForm>) -> Flash<Redirect> {
+    let con = helper::est_db_con();
+    if repo_name.trim().is_empty() || new_data.edit_repo_name.trim().is_empty() {
+        return Flash::error(Redirect::to("/"), "Error: repo name can not be empty");
+    }
+    use db_tables::ConnectionInfo::dsl::*;
+    let update_statement = diesel::update(
+        ConnectionInfo.filter(owning_user.eq(user.id)).filter(name.eq(&repo_name)));
+
+    let update_result;
+
+    if new_data.edit_repo_password.is_empty() {
+        if repo_name == new_data.edit_repo_name {
+            return Flash::error(Redirect::to("/"), "Repo name and password is the same, so nothing happened");
+        }
+        update_result = update_statement.set(name.eq(&new_data.edit_repo_name)).execute(&con)
+    } else {
+        update_result = update_statement.set((name.eq(&new_data.edit_repo_name),
+                                              encryption_password.eq(&helper::encrypt(
+                                                  &new_data.edit_repo_password, &user.encryption_password)))).execute(&con)
+    }
+
+    match update_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Successfully edited repository"),
+        Err(e) => {
+            match e {
+                diesel::result::Error::DatabaseError(e, _) => {
+                    if let diesel::result::DatabaseErrorKind::UniqueViolation = e {
+                        Flash::error(Redirect::to("/"), "New repository name already exists.")
+                    } else {
+                        Flash::error(Redirect::to("/"), "Failed to edit repository")
+                    }
+                }
+                _ => Flash::error(Redirect::to("/"), "Failed to edit repository")
+            }
+        }
+    }
+}
+
+#[post("/delete/<repo_name>")]
+fn delete_repo(user: User, repo_name: String) -> Flash<Redirect> {
+    use db_tables::ConnectionInfo::dsl::*;
+
+    let con = helper::est_db_con();
+
+    let num_deleted = diesel::delete(
+        ConnectionInfo
+            .filter(name.eq(&repo_name))
+            .filter(owning_user.eq(user.id)))
+        .execute(&con).expect("Error sending delete to database");
+
+    if num_deleted == 0 {
+        Flash::error(Redirect::to("/"),
+                     &format!("Failed to delete [{}] repository, doesn't seem to exist in the first place", repo_name))
+    } else {
+        Flash::success(Redirect::to("/"), &format!("Deleted [{}] Repository", repo_name))
+    }
+}
 
 #[post("/add_repo", data = "<name>")]
 fn add_more_repos(user: User, name: Form<AddNewForm>) -> Flash<Redirect> {
-    diesel::insert_into(db_tables::ConnectionInfo::table)
+    let insert_result = diesel::insert_into(db_tables::ConnectionInfo::table)
         .values(&db_tables::ConnectionInfoIns {
             owning_user: user.id,
             name: name.new_repo_name.clone(),
             encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
-        }).execute(&helper::est_db_con()).expect("Adding repo not working properly");
+        }).execute(&helper::est_db_con());
 
-    Flash::success(Redirect::to("/"), "Successfully added new repo")
+    match insert_result {
+        Ok(_) => Flash::success(Redirect::to("/"), "Successfully added new repository"),
+        Err(e) => {
+            match e {
+                diesel::result::Error::DatabaseError(e, _) => {
+                    if let diesel::result::DatabaseErrorKind::UniqueViolation = e {
+                        Flash::error(Redirect::to("/"), "New repository name already exists.")
+                    } else {
+                        Flash::error(Redirect::to("/"), "Failed to add new repository")
+                    }
+                }
+                _ => Flash::error(Redirect::to("/"), "Failed to add new repository")
+            }
+        }
+    }
 }
 
 #[get("/public/<file..>")]
@@ -338,9 +448,12 @@ fn files(file: std::path::PathBuf) -> Option<NamedFile> {
 
 fn main() {
     rocket::ignite()
-        .attach(Template::fairing())
+        .attach(Template::custom(|engines| {
+            engines.handlebars.register_helper("url_encode", Box::new(handlebar_helpers::url_encode_helper));
+            engines.handlebars.register_helper("to_uppercase", Box::new(handlebar_helpers::to_upper_helper));
+        }))
         .mount("/",
-               routes![index, logout, user_index, login_page, login_user
+               routes![index, logout, user_index, login_page, already_logged_in
                ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
-               register_submit, add_more_repos, files]).launch();
+               register_submit, add_more_repos, files, edit_repo, delete_repo]).launch();
 }

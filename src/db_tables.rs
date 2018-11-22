@@ -55,6 +55,14 @@ pub struct ConnectionInfoIns {
     pub encryption_password: String,
 }
 
+//#[derive(Identifiable, Queryable, Debug, Clone)]
+//#[table_name = "ConnectionInfo"]
+//pub struct ConnectionInfoUpdate {
+//    pub owning_user: i32,
+//    pub name: String,
+//    pub encryption_password: String,
+//}
+
 #[derive(Queryable, Debug, Clone)]
 pub struct DbEncryptedData {
     pub b2_bucket_name: String,

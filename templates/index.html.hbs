@@ -8,11 +8,49 @@
     <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="/public/js/jquery-3.3.1.min.js"><\/script>')</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <link rel="stylesheet" href="/public/css/main.css">
     <link rel="stylesheet" href="/public/css/index.css">
 </head>
 <body>
+{{#each configs}}
+    <form id="edit_{{this}}_modal" class="modal grey darken-3" method="post" action="edit_repo/{{url_encode this}}">
+        <div class="modal-content">
+            <h4>Edit repo: {{this}}</h4>
+
+            <div class="input-field">
+                <input type="text" id="{{this}}_new_name" class="repo_name_input white-text" name="edit_repo_name" value="{{this}}" required>
+                <label for="{{this}}_new_name">New Repository Name</label>
+            </div>
+            <div class="input-field">
+                <input type="password" id="{{this}}_new_password" class="repo_password_input white-text" name="edit_repo_password" placeholder="[Same Password]" autocomplete="nope">
+                <label for="{{this}}_new_password">New Repository Password</label>
+            </div>
+        </div>
+        <div class="modal-footer grey darken-1">
+            <button class="modal-close waves-effect waves-dark btn red darken-1" type="button">Discard</button>
+            <button class="waves-effect waves-dark btn green darken-1 save_btn" type="submit">Save<i class="material-icons right">save</i></button>
+        </div>
+    </form>
+{{/each}}
+
+{{#if flash}}
+    <div class="message_popup modal">
+        <div class="modal-content white-text {{status}}">
+            <h4>{{to_uppercase status}}</h4>
+            {{flash}}
+        </div>
+        <div class="modal-footer grey darken-1">
+            <button class="waves-effect waves-dark btn modal-close" type="submit">Close<i class="material-icons right">close</i></button>
+        </div>
+    </div>
+{{/if}}
+
 <h1>B2 Restic Restorer</h1>
 
 <div class="repo_list_content">
@@ -21,12 +59,14 @@
         {{#each configs}}
             <li class="collection-item grey darken-4">
                 <div class="line">
-                <a href="bucket/{{this}}" style="flex: 1 0 auto;">
-                    <button class="btn btn-flat waves-effect waves-dark white-text repo_name">{{this}}</button>
-                </a>
-                <a href="delete/{{this}}" style="flex: 0 0 auto;">
-                    <button class="btn btn-flat waves-effect waves-dark white-text delete"><i class="material-icons">delete</i></button>
-                </a>
+                    <a href="bucket/{{url_encode this}}" style="flex: 1 0 auto;">
+                        <button class="btn btn-flat waves-effect waves-dark white-text repo_name">{{this}}</button>
+                    </a>
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn edit modal-trigger" data-target="edit_{{this}}_modal"><i class="material-icons">edit</i>
+                    </button>
+                    <form method="post" action="delete/{{url_encode this}}" class="edge_btn">
+                        <button class="btn btn-flat waves-effect waves-dark white-text delete"><i class="material-icons">delete</i></button>
+                    </form>
                 </div>
             </li>
         {{/each}}
@@ -54,5 +94,7 @@
     <button class="btn red waves-effect waves-dark darken-2" type="submit" name="logout" id="logout">Logout
         <i class="material-icons right">exit_to_app</i></button>
 </form>
+<div class="footer"></div>
+<script src="/public/js/index.js"></script>
 </body>
 </html>
