@@ -19,6 +19,7 @@ extern crate regex;
 mod helper;
 mod db_tables;
 mod handlebar_helpers;
+mod account_management;
 
 use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
@@ -118,10 +119,10 @@ fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
                                                 &login_candidate.salt)));
             Flash::success(Redirect::to("/"), "Successfully logged in.")
         } else {
-            Flash::error(Redirect::to("/login"), "Username exists, invalid password though.")
+            Flash::error(Redirect::to("/login/"), "Username exists, invalid password though.")
         }
     } else {
-        Flash::error(Redirect::to("/login"), "Invalid username, register with the link below!.")
+        Flash::error(Redirect::to("/login/"), "Invalid username, register with the link below!.")
     }
 }
 
@@ -308,12 +309,17 @@ fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) 
 #[post("/logout")]
 fn logout(_user: User, mut cookies: Cookies) -> Flash<Redirect> {
     cookies.remove_private(Cookie::named("user_id"));
-    Flash::success(Redirect::to("/login"), "Successfully logged out.")
+    Flash::success(Redirect::to("/login/"), "Successfully logged out.")
+}
+
+#[post("/logout", rank = 2)]
+fn logout_no_login() -> Flash<Redirect> {
+    Flash::error(Redirect::to("/login/"), "Can't logout, not logged in in the first place")
 }
 
 #[get("/", rank = 2)]
 fn index() -> Redirect {
-    Redirect::to("/login")
+    Redirect::to("/login/")
 }
 
 #[get("/register")]
@@ -329,15 +335,15 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     let enc = helper::get_random_stuff(32);
 
     if B2_APP_KEY_TEST.is_match(&registration.b2_acc_key) {
-        return Flash::error(Redirect::to("/register"), "Invalid characters in Account/App Key");
+        return Flash::error(Redirect::to("/register/"), "Invalid characters in Account/App Key");
     }
 
     if B2_APP_ID_TEST.is_match(&registration.b2_acc_id) {
-        return Flash::error(Redirect::to("/register"), "Invalid characters in Account/App ID");
+        return Flash::error(Redirect::to("/register/"), "Invalid characters in Account/App ID");
     }
 
     if B2_BUCKET_NAME_TEST.is_match(&registration.b2_bucket_name) {
-        return Flash::error(Redirect::to("/register"), "Invalid characters in Bucket Name");
+        return Flash::error(Redirect::to("/register/"), "Invalid characters in Bucket Name");
     }
 
     diesel::insert_into(db_tables::Users::table)
@@ -352,7 +358,7 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
             b2_bucket_name: registration.b2_bucket_name.clone(),
         }).execute(&con).expect("Not inserting into database");
 
-    Flash::success(Redirect::to("/login"), "Successfully Registered")
+    Flash::success(Redirect::to("/login/"), "Successfully Registered")
 }
 
 #[post("/edit_repo/<repo_name>", data = "<new_data>")]
@@ -378,19 +384,11 @@ fn edit_repo(user: User, repo_name: String, new_data: Form<EditRepoForm>) -> Fla
                                                   &new_data.edit_repo_password, &user.encryption_password)))).execute(&con)
     }
 
-    match update_result {
-        Ok(_) => Flash::success(Redirect::to("/"), "Successfully edited repository"),
-        Err(e) => {
-            match e {
-                diesel::result::Error::DatabaseError(e, _) => {
-                    if let diesel::result::DatabaseErrorKind::UniqueViolation = e {
-                        Flash::error(Redirect::to("/"), "New repository name already exists.")
-                    } else {
-                        Flash::error(Redirect::to("/"), "Failed to edit repository")
-                    }
-                }
-                _ => Flash::error(Redirect::to("/"), "Failed to edit repository")
-            }
+    use helper::IsUnique::*;
+    match helper::check_for_unique_error(update_result).expect("Failed to edit new repository") {
+        Unique(_) => Flash::success(Redirect::to("/"), format!("Successfully edited repository <{}>", new_data.edit_repo_name)),
+        NonUnique => {
+            Flash::error(Redirect::to("/"), "New repository name already exists.")
         }
     }
 }
@@ -424,19 +422,11 @@ fn add_more_repos(user: User, name: Form<AddNewForm>) -> Flash<Redirect> {
             encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
         }).execute(&helper::est_db_con());
 
-    match insert_result {
-        Ok(_) => Flash::success(Redirect::to("/"), "Successfully added new repository"),
-        Err(e) => {
-            match e {
-                diesel::result::Error::DatabaseError(e, _) => {
-                    if let diesel::result::DatabaseErrorKind::UniqueViolation = e {
-                        Flash::error(Redirect::to("/"), "New repository name already exists.")
-                    } else {
-                        Flash::error(Redirect::to("/"), "Failed to add new repository")
-                    }
-                }
-                _ => Flash::error(Redirect::to("/"), "Failed to add new repository")
-            }
+    use helper::IsUnique::*;
+    match helper::check_for_unique_error(insert_result).expect("Failed to add new repository") {
+        Unique(_) => Flash::success(Redirect::to("/"), "Successfully added new repository"),
+        NonUnique => {
+            Flash::error(Redirect::to("/"), "New repository name already exists.")
         }
     }
 }
@@ -455,5 +445,7 @@ fn main() {
         .mount("/",
                routes![index, logout, user_index, login_page, already_logged_in
                ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
-               register_submit, add_more_repos, files, edit_repo, delete_repo]).launch();
+               register_submit, add_more_repos, files, edit_repo, delete_repo, account_management::edit_account,
+               account_management::edit_account_no_login, account_management::change_username, account_management::change_email,
+               account_management::change_password, logout_no_login]).launch();
 }

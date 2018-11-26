@@ -1,0 +1,12 @@
+@import "mixins";
+.content {
+  @include content(800px);
+}
+
+.line {
+  width: 100%;
+  display: flex;
+  .submit {
+    margin-left: auto;
+  }
+}

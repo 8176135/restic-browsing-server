@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width"/>
-    <title>B2 Restic Restorer</title>
+    <title>Repository List - B2 Restic Restorer</title>
 
     <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -51,7 +51,10 @@
     </div>
 {{/if}}
 
-<h1>B2 Restic Restorer</h1>
+<div class="heading">
+    <h2>B2 Restic Restorer</h2>
+    <h4>Repository List</h4>
+</div>
 
 <div class="repo_list_content">
     <ul class="collection with-header">
@@ -59,7 +62,7 @@
         {{#each configs}}
             <li class="collection-item grey darken-4">
                 <div class="line">
-                    <a href="bucket/{{url_encode this}}" style="flex: 1 0 auto;">
+                    <a href="bucket/{{url_encode this}}/" style="flex: 1 0 auto;">
                         <button class="btn btn-flat waves-effect waves-dark white-text repo_name">{{this}}</button>
                     </a>
                     <button class="btn btn-flat waves-effect waves-dark white-text edge_btn edit modal-trigger" data-target="edit_{{this}}_modal"><i class="material-icons">edit</i>
@@ -67,6 +70,9 @@
                     <form method="post" action="delete/{{url_encode this}}" class="edge_btn">
                         <button class="btn btn-flat waves-effect waves-dark white-text delete"><i class="material-icons">delete</i></button>
                     </form>
+                </div>
+                <div class="progress invisible">
+                    <div class="indeterminate"></div>
                 </div>
             </li>
         {{/each}}
@@ -89,7 +95,9 @@
     <input type="password" style="display: none;">
     <button class="btn" type="submit">Add New Repo<i class="material-icons right">add</i></button>
 </form>
-
+<a href="/account/" style="flex: 1 0 auto;" class="edit_account">
+    <button class="btn waves-effect waves-dark white-text"><i class="material-icons left">account_circle</i> Edit Account</button>
+</a>
 <form class="logout" action="/logout" method="post" accept-charset="utf-8">
     <button class="btn red waves-effect waves-dark darken-2" type="submit" name="logout" id="logout">Logout
         <i class="material-icons right">exit_to_app</i></button>

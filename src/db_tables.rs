@@ -47,6 +47,14 @@ pub struct DbUserLogin {
     pub enced_enc_pass: String,
 }
 
+#[derive(Queryable, Debug, Clone, Serialize)]
+pub struct DbUserManagement {
+//    pub id: i32,
+    pub b2_bucket_name: String,
+    pub username: String,
+    pub email: String,
+}
+
 #[derive(Insertable, Debug)]
 #[table_name = "ConnectionInfo"]
 pub struct ConnectionInfoIns {

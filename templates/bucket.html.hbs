@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width"/>
-    <title>Repo: {{repo_name}}</title>
+    <title>Repository: {{repo_name}} - B2 Restic Restorer</title>
     <script
             src="https://code.jquery.com/jquery-3.3.1.min.js"
             integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
@@ -18,8 +18,11 @@
     <link rel="stylesheet" href="/public/css/bucket.css">
 </head>
 <body>
+<div class="heading">
+    <h2>B2 Restic Restorer</h2>
+    <h4>Repository: {{repo_name}}</h4>
+</div>
 
-<h1>Repository: {{repo_name}}</h1>
 <p>{{status}}</p>
 
 <ul id="list">

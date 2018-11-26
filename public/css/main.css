@@ -25,7 +25,7 @@ label.active {
   cursor: default !important;
 }
 
-h1 {
+.heading {
   grid-area: header;
   text-align: center;
   margin: 0;
@@ -49,6 +49,32 @@ h1 {
 .footer {
   height: 100%;
   grid-area: footer;
+}
+
+.progress {
+  margin: 15px 0;
+}
+
+.invisible {
+  display: none !important;
+}
+
+.back_btn {
+  grid-area: lHeader;
+  justify-self: right;
+  align-self: center;
+}
+
+.modal-content h4 {
+  font-size: 18pt;
+  margin-top: 10px;
+  margin-bottom: 30px;
+}
+.modal-content.error {
+  background-color: #b71c1c;
+}
+.modal-content.success {
+  background-color: #1b5e20;
 }
 
 /*# sourceMappingURL=main.css.map */

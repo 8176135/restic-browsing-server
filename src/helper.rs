@@ -226,3 +226,26 @@ pub fn get_random_stuff(length: usize) -> String {
 
     base64::encode(&store)
 }
+
+pub enum IsUnique<T> {
+    NonUnique,
+    Unique(T)
+}
+
+pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Result<IsUnique<T>, diesel::result::Error> {
+    match res {
+        Ok(c) => Ok(IsUnique::Unique(c)),
+        Err(e) => {
+            match e {
+                diesel::result::Error::DatabaseError(de, _) => {
+                    if let diesel::result::DatabaseErrorKind::UniqueViolation = de {
+                        Ok(IsUnique::NonUnique)
+                    } else {
+                        Err(e)
+                    }
+                }
+                _ => Err(e)
+            }
+        }
+    }
+}

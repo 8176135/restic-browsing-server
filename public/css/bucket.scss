@@ -1,8 +1,4 @@
-.back_btn {
-  grid-area: lHeader;
-  justify-self: right;
-  align-self: center;
-}
+@import "mixins";
 
 .download {
   grid-area: addbox;
@@ -10,10 +6,6 @@
   justify-self: center;
   width: 100%;
   margin: 20px;
-}
-
-.invisible {
-  display: none !important;
 }
 
 .collapsed > ul > .collapsed {

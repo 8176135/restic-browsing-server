@@ -31,7 +31,7 @@ label {
   }
 }
 
-h1 {
+.heading {
   grid-area: header;
   text-align: center;
   margin: 0;
@@ -58,34 +58,31 @@ h1 {
 
 }
 
-//input[type="submit"], input[type="button"], button {
-//    @include input(#111, true);
-//    font-family: Electrolize, sans-serif;
-//    border: none;
-//    outline: 0;
-//    color: #EEE;
-//    letter-spacing: 1px;
-//    &.red {
-//        @include input(#490000, true);
-//    }
-//    &.green {
-//        @include input(#00460f, true);
-//    }
-//    &.blue {
-//        @include input(#00183d, true);
-//    }
-//}
-//
-//input[type="text"], input[type="password"], input[type="email"] {
-//    @include input(#111, false);
-//    color: white;
-//    outline: 0;
-//    border: none;
-//    font-family: Electrolize, sans-serif;
-//    border-radius: 5px;
-//    overflow: hidden;
-//    transition: background-color 0.1s linear;
-//    &.red {
-//        @include input(#2f0000, false);
-//    }
-//}
+.progress {
+  margin: 15px 0;
+
+}
+
+.invisible {
+  display: none !important;
+}
+
+.back_btn {
+  grid-area: lHeader;
+  justify-self: right;
+  align-self: center;
+}
+
+.modal-content {
+  h4 {
+    font-size: 18pt;
+    margin-top: 10px;
+    margin-bottom: 30px;
+  }
+  &.error {
+    background-color: #b71c1c;
+  }
+  &.success {
+    background-color: #1b5e20;
+  }
+}

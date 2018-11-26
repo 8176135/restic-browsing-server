@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <title>Account Management - B2 Restic Restorer</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="/public/js/jquery-3.3.1.min.js"><\/script>')</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="/public/css/main.css">
+    <link rel="stylesheet" href="/public/css/account.css">
+</head>
+<body>
+
+{{#if flash}}
+    <div class="message_popup modal">
+        <div class="modal-content white-text {{status}}">
+            <h4>{{to_uppercase status}}</h4>
+            {{flash}}
+        </div>
+        <div class="modal-footer grey darken-1">
+            <button class="waves-effect waves-dark btn modal-close" type="submit">Close<i class="material-icons right">close</i></button>
+        </div>
+    </div>
+{{/if}}
+<div class="heading">
+    <h2>B2 Restic Restorer</h2>
+    <h4>Account Management</h4>
+</div>
+
+<ul class="collapsible content black">
+    <li>
+        <div class="collapsible-header grey darken-4"><i class="material-icons">person</i>Change Username</div>
+        <div class="collapsible-body">
+            <form action="/account/change/username" method="post">
+                <div class="input-field">
+                    <input type="text" name="username" id="username" class="validate" minlength="4" maxlength="25" value="{{username}}" required>
+                    <label for="username">New Username</label>
+                </div>
+                <div class="line">
+                    <button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>
+                </div>
+            </form>
+        </div>
+    </li>
+    <li>
+        <div class="collapsible-header grey darken-3"><i class="material-icons">security</i>Change Password</div>
+        <div class="collapsible-body">
+            <form action="/account/change/password" method="post">
+                <div class="input-field">
+                    <input type="password" name="old_password" id="old_password" class="validate" minlength="6" autocomplete="off" value="" required>
+                    <label for="old_password">Old Password</label>
+                </div>
+                <div class="input-field">
+                    <input type="password" name="password" id="password" class="validate" minlength="6" autocomplete="off" value="" required>
+                    <label for="password">New Password</label>
+                </div>
+                <div class="input-field">
+                    <input type="password" id="pass_conf" class="validate" autocomplete="off" value="" required>
+                    <label for="pass_conf">Confirm New Password</label>
+                </div>
+                <div class="line">
+                    <button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>
+                </div>
+            </form>
+        </div>
+    </li>
+    <li>
+        <div class="collapsible-header grey darken-4"><i class="material-icons">email</i>Change Email</div>
+        <div class="collapsible-body">
+            <form action="/account/change/email" method="post">
+                <div class="input-field">
+                    <input type="email" name="email" id="email" class="validate" maxlength="100" value="{{email}}" required>
+                    <label for="email">Email</label>
+                </div>
+                <div class="line">
+                    <button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>
+                </div>
+            </form>
+        </div>
+    </li>
+    <li>
+        <div class="collapsible-header grey darken-3"><i class="material-icons">whatshot</i>Change B2 Connection Info</div>
+        <div class="collapsible-body">
+            <form action="/account/change/b2" method="post">
+                <div class="input-field">
+                    <input type="text" name="b2_acc_key" id="b2_acc_key" class="validate" maxlength="100" autocomplete="off" placeholder="[Same Key]">
+                    <label for="b2_acc_key">B2 Account Key</label>
+                </div>
+                <div class="input-field">
+                    <input type="text" name="b2_acc_id" id="b2_acc_id" class="validate" maxlength="100" autocomplete="off" placeholder="[Same ID]">
+                    <label for="b2_acc_id">B2 Account ID</label>
+                </div>
+                <div class="input-field">
+                    <input type="text" name="b2_bucket_name" id="b2_bucket_name" maxlength="100" class="validate" value="{{b2_bucket_name}}" required>
+                    <label for="b2_bucket_name">B2 Bucket Name</label>
+                </div>
+                <div class="line">
+                    <button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>
+                </div>
+            </form>
+        </div>
+    </li>
+</ul>
+
+<a class="back_btn" href="/">
+    <button class="btn"><i class="material-icons left">keyboard_arrow_left</i>Back to List</button>
+</a>
+<form class="logout" action="/logout" method="post" accept-charset="utf-8">
+    <button class="btn red waves-effect waves-dark darken-2" type="submit" name="logout" id="logout">Logout
+        <i class="material-icons right">exit_to_app</i></button>
+</form>
+<input type="password" style="display: none;">
+<input type="password" style="display: none;">
+<input type="password" style="display: none;">
+<input type="password" style="display: none;">
+<div class="footer"></div>
+<script src="/public/js/account.js"></script>
+</body>
+</html>

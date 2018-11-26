@@ -40,6 +40,12 @@
   background-color: #ff9800;
 }
 
+.edit_account {
+  grid-area: lHeader;
+  justify-self: right;
+  align-self: center;
+}
+
 .edge_btn {
   flex: 0 0 auto;
 }
@@ -56,18 +62,6 @@
   font-size: 18pt;
   margin-top: 10px;
   margin-bottom: 30px;
-}
-
-.modal-content h4 {
-  font-size: 18pt;
-  margin-top: 10px;
-  margin-bottom: 30px;
-}
-.modal-content.error {
-  background-color: #b71c1c;
-}
-.modal-content.success {
-  background-color: #1b5e20;
 }
 
 /*# sourceMappingURL=index.css.map */

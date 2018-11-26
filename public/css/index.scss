@@ -1,36 +1,13 @@
+@import "mixins";
+
 .add_repo_box {
   width: 95%;
   max-width: 600px;
   margin: auto;
 }
 
-//body {
-//  display: grid;
-//  grid-template-columns: 10% 1fr 3fr 1fr 10%;
-//  grid-template-rows: 175px 1fr min-content 300px;
-//  grid-template-areas:  ". . header rHeader ."
-//                        ". content content content ."
-//                        ". . addbox . ."
-//                        "footer footer footer footer footer";
-//}
-//
-//h1 {
-//  grid-area: header;
-//  text-align: center;
-//  margin: 0;
-//  padding: 0;
-//  align-self: center;
-//  -webkit-user-select: none;
-//  -moz-user-select: none;
-//  -ms-user-select: none;
-//  user-select: none;
-//}
-
 .repo_list_content {
-  grid-area: content;
-  max-width: 900px;
-  justify-self: center;
-  width: 100%;
+  @include content(900px);
   .line {
     width: 100%;
     display: flex;
@@ -62,6 +39,12 @@
   }
 }
 
+.edit_account {
+  grid-area: lHeader;
+  justify-self: right;
+  align-self: center;
+}
+
 .edge_btn {
   flex: 0 0 auto;
 }
@@ -80,18 +63,3 @@ grid-area: addbox;
     margin-bottom: 30px;
   }
 }
-
-.modal-content {
-  h4 {
-    font-size: 18pt;
-    margin-top: 10px;
-    margin-bottom: 30px;
-  }
-  &.error {
-    background-color: #b71c1c;
-  }
-  &.success {
-    background-color: #1b5e20;
-  }
-}
-

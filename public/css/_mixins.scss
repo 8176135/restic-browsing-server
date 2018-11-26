@@ -11,3 +11,10 @@
     }
   }
 }
+
+@mixin content($max_width) {
+  grid-area: content;
+  max-width: $max_width;
+  justify-self: center;
+  width: 100%;
+}
