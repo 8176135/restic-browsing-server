@@ -1,0 +1,16 @@
+.content {
+  grid-area: content;
+  max-width: 800px;
+  justify-self: center;
+  width: 100%;
+}
+
+.line {
+  width: 100%;
+  display: flex;
+}
+.line .submit {
+  margin-left: auto;
+}
+
+/*# sourceMappingURL=account.css.map */
