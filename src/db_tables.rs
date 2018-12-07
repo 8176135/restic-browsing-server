@@ -6,9 +6,6 @@ table! {
         password -> Text,
         salt -> Text,
         enced_enc_pass -> Text,
-        b2_acc_key -> Text,
-        b2_acc_id -> Text,
-        b2_bucket_name -> Text,
     }
 }
 
@@ -18,11 +15,75 @@ table! {
         owning_user -> Integer,
         name -> Text,
         encryption_password -> Text,
+        service_used -> Integer,
     }
 }
 
+table! {
+    EnvNames (id) {
+        id -> Integer,
+        env_name -> Text,
+    }
+}
+
+table! {
+    ServiceType (id) {
+        id -> Integer,
+        service_type -> Text,
+    }
+}
+
+table! {
+    Services (id) {
+        id -> Integer,
+        owning_user -> Integer,
+        service_name -> Text,
+        service_type -> Integer,
+        enc_addr_part -> Text,
+    }
+}
+
+table! {
+    ServiceContents (id) {
+        id -> Integer,
+        env_name_id -> Integer,
+        owning_service -> Integer,
+        encrypted_env_value -> Text,
+    }
+}
+
+table! {
+    QueryView (name, owning_user) {
+        name -> Text,
+        owning_user -> Integer,
+        encryption_password -> Text,
+        service_name -> Text,
+        encrypted_env_value -> Text,
+        env_name -> Text,
+        service_type -> Text,
+        enc_addr_part -> Text,
+    }
+}
+
+table! {
+    BasesList (owning_user, service_name) {
+        owning_user -> Integer,
+        service_name -> Text,
+        service_type -> Integer,
+        env_name_ids -> Nullable<Text>,
+        encrypted_env_values -> Nullable<Text>,
+    }
+}
+
+no_arg_sql_function!(last_insert_id, diesel::types::Integer);
+
 joinable!(ConnectionInfo -> Users (owning_user));
+joinable!(ConnectionInfo -> Services (service_used));
 allow_tables_to_appear_in_same_query!(ConnectionInfo, Users);
+allow_tables_to_appear_in_same_query!(ConnectionInfo, Services);
+
+use diesel::sql_types::{Integer, Text, Nullable};
+sql_function!(fn update_repositories(service_name: Text, owning_user: Integer, repo_name: Text, old_repo_name: Text, encryption_password: Nullable<Text>) -> Integer);
 
 #[derive(Insertable, Debug)]
 #[table_name = "Users"]
@@ -33,9 +94,6 @@ pub struct DbUserIns {
     pub password: String,
     pub salt: String,
     pub enced_enc_pass: String,
-    pub b2_acc_key: String,
-    pub b2_acc_id: String,
-    pub b2_bucket_name: String,
 }
 
 #[derive(Identifiable, Queryable, Debug, Clone)]
@@ -50,9 +108,31 @@ pub struct DbUserLogin {
 #[derive(Queryable, Debug, Clone, Serialize)]
 pub struct DbUserManagement {
 //    pub id: i32,
-    pub b2_bucket_name: String,
     pub username: String,
     pub email: String,
+}
+
+#[derive(Identifiable, Queryable, Debug, Clone, Serialize)]
+#[table_name = "EnvNames"]
+pub struct DbEnvNames {
+    pub id: i32,
+    pub env_name: String,
+}
+
+#[derive(Identifiable, Queryable, Debug, Clone, Serialize)]
+#[table_name = "ServiceType"]
+pub struct DbServiceType {
+    pub id: i32,
+    pub service_type: String,
+}
+
+#[derive(Queryable, Debug, Serialize)]
+pub struct DbBasesList {
+//    pub owning_user: i32,
+    pub service_name: String,
+    pub env_name_ids: Option<String>,
+    pub service_type: i32
+//    pub encrypted_env_values: String,
 }
 
 #[derive(Insertable, Debug)]
@@ -61,6 +141,37 @@ pub struct ConnectionInfoIns {
     pub owning_user: i32,
     pub name: String,
     pub encryption_password: String,
+    pub service_used: i32,
+}
+
+#[derive(Insertable, Debug)]
+#[table_name = "Services"]
+pub struct ServicesIns {
+    pub owning_user: i32,
+    pub service_name: String,
+    pub enc_addr_part: String,
+    pub service_type: i32,
+}
+
+#[derive(Insertable, Debug)]
+#[table_name = "ServiceContents"]
+pub struct ServiceContentIns {
+    pub owning_service: i32,
+    pub env_name_id: i32,
+    pub encrypted_env_value: String,
+}
+
+#[derive(Queryable,Insertable, Debug)]
+#[table_name = "QueryView"]
+pub struct DbQueryView {
+    pub name: String,
+    pub owning_user: i32,
+    pub encryption_password: String,
+    pub service_name: String,
+    pub encrypted_env_value: String,
+    pub env_name: String,
+    pub service_type: String,
+    pub enc_addr_part: String,
 }
 
 //#[derive(Identifiable, Queryable, Debug, Clone)]
@@ -73,9 +184,6 @@ pub struct ConnectionInfoIns {
 
 #[derive(Queryable, Debug, Clone)]
 pub struct DbEncryptedData {
-    pub b2_bucket_name: String,
-    pub b2_acc_key: String,
-    pub b2_acc_id: String,
     pub name: String,
     pub encryption_password: String,
 }

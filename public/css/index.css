@@ -4,40 +4,106 @@
   margin: auto;
 }
 
-.repo_list_content {
+.list_content {
   grid-area: content;
   max-width: 900px;
   justify-self: center;
   width: 100%;
 }
-.repo_list_content .line {
+.list_content .line {
   width: 100%;
   display: flex;
 }
-.repo_list_content .line .btn.repo_name {
+.list_content .line .btn.repo_name {
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
   background-color: #00796b;
   width: 100%;
   text-align: left;
 }
-.repo_list_content .line .btn.repo_name:hover {
+.list_content .line .btn.repo_name:hover {
   background-color: #009688;
 }
-.repo_list_content .line .btn.delete {
+.list_content .line .btn.delete {
   border-bottom-left-radius: 0;
   border-top-left-radius: 0;
-  background-color: #d32f2f;
 }
-.repo_list_content .line .btn.delete:hover {
-  background-color: #f44336;
-}
-.repo_list_content .line .btn.edit {
-  border-radius: 0;
+.list_content .line .btn.edit {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
   background-color: #f57c00;
 }
-.repo_list_content .line .btn.edit:hover {
+.list_content .line .btn.edit.no_radius {
+  border-radius: 0;
+}
+.list_content .line .btn.edit.full_width {
+  flex: 1 0 auto;
+}
+.list_content .line .btn.edit:hover {
   background-color: #ff9800;
+}
+
+.btn.delete {
+  background-color: #d32f2f;
+}
+.btn.delete:hover {
+  background-color: #f44336;
+}
+
+.line {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+.line div {
+  flex: 1 1 auto;
+}
+
+.first_part + .select-wrapper {
+  width: 120px;
+  flex: none;
+}
+.first_part + .select-wrapper > input, .first_part + .select-wrapper > ul span {
+  font-size: 11pt !important;
+}
+
+i::selection, label::selection {
+  background-color: transparent;
+}
+
+.collection, .modal {
+  overflow: visible !important;
+}
+
+#new_service_box .line input {
+  transform: translateY(4px);
+}
+
+#env_name_template {
+  display: none;
+}
+
+.select-wrapper .caret {
+  fill: white !important;
+}
+
+.tabs {
+  grid-area: tabs;
+  justify-self: center;
+  max-width: 900px;
+  display: flex;
+  border-radius: 2px;
+}
+.tabs .tab {
+  flex: 1 0 0;
+  transition: background-color 0.2s linear;
+}
+.tabs .tab:hover {
+  background-color: #090909;
+}
+
+.center {
+  margin: auto;
 }
 
 .edit_account {

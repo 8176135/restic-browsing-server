@@ -163,12 +163,11 @@ pub fn decrypt(cipher_txt: &str, key: &str) -> String {
     String::from_utf8_lossy(out).to_string()
 }
 
-pub fn restic(b2_acc_key: &str, b2_acc_id: &str, b2_bucket_name: &str, folder: &str, pass: &str) -> Command {
+pub fn restic(env_vars: &std::collections::HashMap<String, String>, service_type: &str, link: &str, path: &str, pass: &str) -> Command {
     let mut b2_command = std::process::Command::new("restic");
-    b2_command.env("B2_ACCOUNT_KEY", b2_acc_key)
-        .env("B2_ACCOUNT_ID", b2_acc_id)
-        .env("RESTIC_PASSWORD", pass)
-        .arg("-r").arg(format!("b2:{}:{}", b2_bucket_name, folder));
+    b2_command.env("RESTIC_PASSWORD", pass)
+        .envs(env_vars)
+        .arg("-r").arg(format!("{}:{}{}", service_type, link, path));
     b2_command
 }
 
@@ -195,25 +194,37 @@ pub fn verify_user(db_entry: &db_tables::DbUserLogin, password_candi: &str) -> b
 }
 
 pub fn restic_db(folder_name: &str, user: &::User) -> Result<Command, ()> {
-    use db_tables::{Users, ConnectionInfo};
+    use db_tables::QueryView;
 
     let con = est_db_con();
-    let data: Vec<db_tables::DbEncryptedData> = Users::dsl::Users.inner_join(ConnectionInfo::table)
-        .select((Users::b2_bucket_name, Users::b2_acc_key, Users::b2_acc_id, ConnectionInfo::name, ConnectionInfo::encryption_password))
-        .filter(Users::id.eq(user.id))
-        .filter(&ConnectionInfo::name.eq(folder_name))
-        .load::<db_tables::DbEncryptedData>(&con).expect("Failed to connect with db");
+//    let data: Vec<db_tables::DbEncryptedData> = Users::dsl::Users.inner_join(ConnectionInfo::table)
+////        .select((ConnectionInfo::name, ConnectionInfo::encryption_password))
+////        .filter(Users::id.eq(user.id))
+////        .filter(&ConnectionInfo::name.eq(folder_name))
+////        .load::<db_tables::DbEncryptedData>(&con).expect("Failed to connect with db");
+
+    let data: Vec<db_tables::DbQueryView> = QueryView::dsl::QueryView
+        .filter(QueryView::owning_user.eq(user.id))
+        .filter(QueryView::name.eq(folder_name))
+        .load::<db_tables::DbQueryView>(&con).expect("Can't select QueryView");
 
     if data.is_empty() {
         return Err(());
     }
-    let data = data.first().unwrap();
+    let first = &data[0];
 
-    Ok(restic(&decrypt(&data.b2_acc_key, &user.encryption_password),
-              &decrypt(&data.b2_acc_id, &user.encryption_password),
-              &data.b2_bucket_name,
-              &folder_name,
-              &decrypt(&data.encryption_password, &user.encryption_password)))
+//    Ok(restic(&decrypt(&data.b2_acc_key, &user.encryption_password),
+//              &decrypt(&data.b2_acc_id, &user.encryption_password),
+//              &data.b2_bucket_name,
+//              &folder_name,
+//              &decrypt(&data.encryption_password, &user.encryption_password)))
+
+    Ok(restic(
+        &data.iter().map(|c| (c.env_name.clone(), decrypt(&c.encrypted_env_value, &user.encryption_password))).collect(),
+        &first.service_type,
+        &decrypt(&first.enc_addr_part, &user.encryption_password),
+        &folder_name,
+        &decrypt(&first.encryption_password, &user.encryption_password)))
 }
 
 pub fn get_random_stuff(length: usize) -> String {
@@ -227,9 +238,10 @@ pub fn get_random_stuff(length: usize) -> String {
     base64::encode(&store)
 }
 
+//#[derive(PartialEq)]
 pub enum IsUnique<T> {
     NonUnique,
-    Unique(T)
+    Unique(T),
 }
 
 pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Result<IsUnique<T>, diesel::result::Error> {
@@ -249,3 +261,7 @@ pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Resul
         }
     }
 }
+
+//pub fn extract_form_array_data() -> Vec<db_tables::ServiceContentIns> {
+//
+//}

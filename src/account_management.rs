@@ -11,7 +11,6 @@ pub fn edit_account(user: super::User, flash: Option<FlashMessage>) -> Template 
     use db_tables::Users;
     #[derive(Serialize)]
     struct AccountManagementData {
-        pub b2_bucket_name: String,
         pub username: String,
         pub email: String,
         pub flash: Option<String>,
@@ -27,7 +26,7 @@ pub fn edit_account(user: super::User, flash: Option<FlashMessage>) -> Template 
 
     let output: db_tables::DbUserManagement =
         Users::dsl::Users.filter(Users::id.eq(user.id))
-            .select((Users::b2_bucket_name, Users::username, Users::email))
+            .select((Users::username, Users::email))
             .load::<db_tables::DbUserManagement>(&con)
             .expect("Can't connect to database")
             .first()
@@ -37,7 +36,6 @@ pub fn edit_account(user: super::User, flash: Option<FlashMessage>) -> Template 
     Template::render("account", AccountManagementData {
         username: output.username,
         email: output.email,
-        b2_bucket_name: output.b2_bucket_name,
         flash,
         status
     })
@@ -102,7 +100,7 @@ pub fn change_email(user: super::User, new_email: Form<NewEmail>) -> Flash<Redir
 
 #[post("/account/change/password", data = "<new_password>")]
 pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Flash<Redirect> {
-    use db_tables::Users;
+    use db_tables::Users;   
 
     let con = helper::est_db_con();
 

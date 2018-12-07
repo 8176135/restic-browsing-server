@@ -6,7 +6,7 @@
   margin: auto;
 }
 
-.repo_list_content {
+.list_content {
   @include content(900px);
   .line {
     width: 100%;
@@ -24,13 +24,17 @@
     .btn.delete {
       border-bottom-left-radius: 0;
       border-top-left-radius: 0;
-      background-color: #d32f2f;
-      &:hover {
-        background-color: #f44336;
-      }
     }
     .btn.edit {
-      border-radius: 0;
+      &.no_radius {
+        border-radius: 0;
+      }
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
+
+      &.full_width {
+        flex: 1 0 auto;
+      }
       background-color: #f57c00;
       &:hover {
         background-color: #ff9800;
@@ -38,6 +42,70 @@
     }
   }
 }
+
+.btn.delete {
+  background-color: #d32f2f;
+  &:hover {
+    background-color: #f44336;
+  }
+}
+.line {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  div {
+    flex: 1 1 auto;
+  }
+}
+
+.first_part + .select-wrapper {
+  width: 120px;
+  flex: none;
+  > input, > ul span {
+    font-size: 11pt !important;
+  }
+}
+i::selection, label::selection {
+  background-color: transparent;
+}
+.collection, .modal {
+  overflow: visible !important;
+}
+
+#new_service_box .line {
+  input {
+    transform: translateY(4px);
+  }
+}
+
+#env_name_template {
+  display: none;
+}
+
+.select-wrapper .caret {
+  fill: white !important;
+}
+.tabs {
+  grid-area: tabs;
+  justify-self: center;
+  max-width: 900px;
+  display: flex;
+  .tab {
+    flex: 1 0 0;
+    transition: background-color 0.2s linear;
+  }
+
+  .tab:hover {
+    background-color: #090909;
+  }
+
+  border-radius: 2px;
+}
+
+.center {
+  margin: auto;
+}
+
 
 .edit_account {
   grid-area: lHeader;

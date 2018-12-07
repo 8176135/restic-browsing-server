@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width"/>
-    <title>Account Management - B2 Restic Restorer</title>
+    <title>Account Management - Restic Restorer</title>
 
     <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -31,7 +31,7 @@
     </div>
 {{/if}}
 <div class="heading">
-    <h2>B2 Restic Restorer</h2>
+    <h2>Restic Restorer</h2>
     <h4>Account Management</h4>
 </div>
 
@@ -79,28 +79,6 @@
                 <div class="input-field">
                     <input type="email" name="email" id="email" class="validate" maxlength="100" value="{{email}}" required>
                     <label for="email">Email</label>
-                </div>
-                <div class="line">
-                    <button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>
-                </div>
-            </form>
-        </div>
-    </li>
-    <li>
-        <div class="collapsible-header grey darken-3"><i class="material-icons">whatshot</i>Change B2 Connection Info</div>
-        <div class="collapsible-body">
-            <form action="/account/change/b2" method="post">
-                <div class="input-field">
-                    <input type="text" name="b2_acc_key" id="b2_acc_key" class="validate" maxlength="100" autocomplete="off" placeholder="[Same Key]">
-                    <label for="b2_acc_key">B2 Account Key</label>
-                </div>
-                <div class="input-field">
-                    <input type="text" name="b2_acc_id" id="b2_acc_id" class="validate" maxlength="100" autocomplete="off" placeholder="[Same ID]">
-                    <label for="b2_acc_id">B2 Account ID</label>
-                </div>
-                <div class="input-field">
-                    <input type="text" name="b2_bucket_name" id="b2_bucket_name" maxlength="100" class="validate" value="{{b2_bucket_name}}" required>
-                    <label for="b2_bucket_name">B2 Bucket Name</label>
                 </div>
                 <div class="line">
                     <button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>

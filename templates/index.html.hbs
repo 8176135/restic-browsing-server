@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width"/>
-    <title>Repository List - B2 Restic Restorer</title>
+    <title>Repository List - Restic Restorer</title>
 
     <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -19,21 +19,80 @@
 </head>
 <body>
 {{#each configs}}
-    <form id="edit_{{this}}_modal" class="modal grey darken-3" method="post" action="edit_repo/{{url_encode this}}">
+    <form id="edit_repo_{{name}}_modal" class="modal grey darken-3" method="post" action="edit/repo/{{url_encode name}}">
         <div class="modal-content">
-            <h4>Edit repo: {{this}}</h4>
+            <h4>Edit repo: {{name}}</h4>
+
+            <div class="line">
+                <select required title="owning_service" name="owning_service" data-selected="{{owning_service}}" class="validate preselect" style="flex: 1 0 auto;">
+                    <option value="" disabled>Select base Service</option>
+                    {{#each ../services}}
+                        <option value="{{name}}">{{name}}</option>
+                    {{/each}}
+                </select>
+                <div class="input-field" style="flex: 10 0 auto;">
+                    <input type="text" id="{{name}}_new_name" class="repo_name_input white-text" name="edit_repo_name" onblur="repo_name_check(this)" maxlength="63" value="{{name}}" required>
+                    <label for="{{name}}_new_name">New Repository Name</label>
+                </div>
+            </div>
 
             <div class="input-field">
-                <input type="text" id="{{this}}_new_name" class="repo_name_input white-text" name="edit_repo_name" value="{{this}}" required>
-                <label for="{{this}}_new_name">New Repository Name</label>
-            </div>
-            <div class="input-field">
-                <input type="password" id="{{this}}_new_password" class="repo_password_input white-text" name="edit_repo_password" placeholder="[Same Password]" autocomplete="nope">
-                <label for="{{this}}_new_password">New Repository Password</label>
+                <input type="password" id="{{name}}_new_password" class="repo_password_input white-text" name="edit_repo_password" placeholder="[Same Password]"
+                       autocomplete="nope">
+                <label for="{{name}}_new_password">New Repository Password</label>
             </div>
         </div>
         <div class="modal-footer grey darken-1">
             <button class="modal-close waves-effect waves-dark btn red darken-1" type="button">Discard</button>
+            <button class="waves-effect waves-dark btn green darken-1 save_btn" type="submit">Save<i class="material-icons right">save</i></button>
+        </div>
+    </form>
+{{/each}}
+
+<form id="delete_service_confirm_modal" class="modal red darken-4" method="post" action="/delete/service/">
+    <div class="modal-content">
+        <h4>Delete service confirmation: <span class="service_name"></span></h4>
+        <p>Are you sure you want to delete [<span class="service_name"></span>]?</p>
+        <p>This will delete <b>ALL</b> repository connections that uses this preset. </p>
+        <p>(Your data will be unchanged, you just have to re-add the service and repository connection if you want to access it through this site)</p>
+    </div>
+    <div class="modal-footer grey darken-1">
+        <button class="modal-close waves-effect waves-dark btn btn-flat white-text" type="button">Cancel</button>
+        <button class="waves-effect waves-dark btn red darken-2 delete_btn" type="submit">Confirm Delete<i class="material-icons right">delete</i></button>
+    </div>
+</form>
+
+{{#each services}}
+    <form id="edit_service_{{name}}_modal" class="modal grey darken-3" method="post" action="edit/service/{{url_encode name}}">
+        <div class="modal-content">
+            <h4>Edit Service: {{name}}</h4>
+            <div class="input-field">
+                <input type="text" id="{{name}}_new_name" class="service_name_input white-text validate" name="new_service_name" value="{{name}}" onblur="service_name_check(this)" maxlength="63" required>
+                <label for="{{name}}_new_name">New Service Name</label>
+            </div>
+            <div class="line">
+                <code style="margin-right: 10px;" class="first_part">restic -r </code>
+                <select name="service_type" title="Service Type" style="width: 120px;" class="preselect" data-selected="{{service_selected}}">
+                    <option value="-1" disabled>Same Service</option>
+                    {{#each ../service_type}}
+                        <option value="{{id}}">{{service_type}}</option>
+                    {{/each}}
+                </select>
+                <code style="margin: 0 10px">:</code>
+                <div class="input-field">
+                    <input type="text" name="enc_addr_part" id="enc_addr_{{name}}_part" placeholder="[Same Address]" autocomplete="nope">
+                    <label for="enc_addr_{{name}}_part">Encrypted Address Part</label>
+                </div>
+            </div>
+            <ul class="collection with-header black env_variable_list" data-preloaded="{{list_of_env_vars}}">
+                <li class="collection-header grey darken-4">Environment Variables (Encrypted)</li>
+                <li class="collection-item line black">
+                    <button class="btn waves-effect waves-dark add_var_btn" type="button">Add New Variable<i class="material-icons right">add</i></button>
+                </li>
+            </ul>
+        </div>
+        <div class="modal-footer grey darken-1">
+            <button class="modal-close waves-effect waves-dark btn red darken-1" type="button">Close</button>
             <button class="waves-effect waves-dark btn green darken-1 save_btn" type="submit">Save<i class="material-icons right">save</i></button>
         </div>
     </form>
@@ -52,22 +111,26 @@
 {{/if}}
 
 <div class="heading">
-    <h2>B2 Restic Restorer</h2>
-    <h4>Repository List</h4>
+    <h2>Restic Restorer</h2>
+    <!--<h4>Repository List</h4>-->
 </div>
-
-<div class="repo_list_content">
+<ul class="tabs black">
+    <li class="tab"><a href="#repo_list_content">Repository List</a></li>
+    <li class="tab"><a href="#service_list_content">Services</a></li>
+</ul>
+<div id="repo_list_content" class="list_content">
     <ul class="collection with-header">
         <li class="collection-header grey darken-3">Repository List</li>
         {{#each configs}}
             <li class="collection-item grey darken-4">
                 <div class="line">
-                    <a href="bucket/{{url_encode this}}/" style="flex: 1 0 auto;">
-                        <button class="btn btn-flat waves-effect waves-dark white-text repo_name">{{this}}</button>
+                    <a href="bucket/{{url_encode name}}/" style="flex: 1 0 auto;">
+                        <button class="btn btn-flat waves-effect waves-dark white-text repo_name">{{name}}</button>
                     </a>
-                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn edit modal-trigger" data-target="edit_{{this}}_modal"><i class="material-icons">edit</i>
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn edit no_radius modal-trigger" data-target="edit_repo_{{name}}_modal">
+                        <i class="material-icons">edit</i>
                     </button>
-                    <form method="post" action="delete/{{url_encode this}}" class="edge_btn">
+                    <form method="post" action="/delete/repo/{{url_encode name}}" class="edge_btn">
                         <button class="btn btn-flat waves-effect waves-dark white-text delete"><i class="material-icons">delete</i></button>
                     </form>
                 </div>
@@ -76,24 +139,116 @@
                 </div>
             </li>
         {{/each}}
+        <li class="collection-item grey darken-4">
+            <div class="line">
+                <div class="btn_wrapper center" data-position="top" data-tooltip="Please add at least 1 service.">
+                    <button class="btn btn-flat waves-effect waves-dark white-text green modal-trigger"
+                            id="add_new_repo_modal_btn"
+                            data-target="new_repo_box">Add New Repository<i
+                            class="material-icons right">add</i>
+                    </button>
+                </div>
+            </div>
+        </li>
     </ul>
 </div>
-<form class="add_repo_box" action="/add_repo" method="post" accept-charset="utf-8">
-    <h4>Add new repository</h4>
-    <div class="input-field">
-        <input type="text" name="new_repo_name" id="new_repo_name" autocomplete="nope" required>
-        <label for="new_repo_name">New Repository Name</label>
+
+<div id="service_list_content" class="list_content">
+    <ul class="collection with-header">
+        <li class="collection-header grey darken-3">Service List</li>
+        {{#each services}}
+            <li class="collection-item grey darken-4 service_list_item">
+                <div class="line">
+                    <button class="btn btn-flat waves-effect waves-dark white-text edit full_width modal-trigger" data-target="edit_service_{{name}}_modal">
+                        <i class="material-icons left">edit</i> {{name}}
+                    </button>
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn delete modal-trigger" data-target="delete_service_confirm_modal"
+                            data-delete_name="{{url_encode name}}">
+                        <i class="material-icons">delete</i>
+                    </button>
+                </div>
+            </li>
+        {{/each}}
+        <li class="collection-item grey darken-4">
+            <div class="line">
+                <button class="btn btn-flat waves-effect waves-dark white-text green center modal-trigger" data-target="new_service_box">Add New Service<i
+                        class="material-icons right">add</i>
+                </button>
+            </div>
+        </li>
+    </ul>
+</div>
+
+<form id="new_repo_box" class="modal grey darken-3" action="/add/repo" method="post" accept-charset="utf-8">
+    <div class="modal-content">
+        <h4>Add new repository</h4>
+        <div class="line">
+            <select required title="owning_service" name="owning_service" class="validate" style="flex: 1 0 auto;">
+                <option value="" selected disabled>Select base Service</option>
+                {{#each services}}
+                    <option value="{{name}}">{{name}}</option>
+                {{/each}}
+            </select>
+            <div class="input-field" style="flex: 10 1 auto;">
+                <input type="text" name="new_repo_name" id="new_repo_name" class="validate" autocomplete="nope" maxlength="63" onblur="repo_name_check(this)" required>
+                <label for="new_repo_name">New Repository Name/Path</label>
+            </div>
+        </div>
+
+        <div class="input-field">
+            <input type="password" name="new_repo_password" id="new_repo_password" autocomplete="nope">
+            <label for="new_repo_password">New Repository Password</label>
+        </div>
+        <!--Ridiculous bloat needed to prevent FF from assuming the above it username and password and auto filling-->
+        <input type="password" style="display: none;">
+        <input type="password" style="display: none;">
+        <input type="password" style="display: none;">
+        <input type="password" style="display: none;">
     </div>
-    <div class="input-field">
-        <input type="password" name="new_repo_password" id="new_repo_password" autocomplete="nope" required>
-        <label for="new_repo_password">New Repository Password</label>
+    <div class="modal-footer grey darken-1">
+        <button class="modal-close waves-effect waves-dark btn red darken-1" type="button">Close</button>
+        <button class="btn waves-effect waves-dark" type="submit">Add New Repo<i class="material-icons right">add</i></button>
     </div>
-    <!--Ridiculous bloat needed to prevent FF from assuming the above it username and password and auto filling-->
-    <input type="password" style="display: none;">
-    <input type="password" style="display: none;">
-    <input type="password" style="display: none;">
-    <input type="password" style="display: none;">
-    <button class="btn" type="submit">Add New Repo<i class="material-icons right">add</i></button>
+</form>
+
+<form id="new_service_box" class="modal grey darken-3" action="/add/service" method="post" accept-charset="utf-8">
+    <div class="modal-content">
+        <h4>Add new service</h4>
+        <div class="input-field">
+            <input type="text" name="new_service_name" id="new_service_name" class="validate" autocomplete="nope" onblur="service_name_check(this)" maxlength="63" required>
+            <label for="new_service_name">New Service Name</label>
+        </div>
+        <div class="line">
+            <code style="margin-right: 10px;" class="first_part">restic -r </code>
+            <select name="service_type" title="Service Type" style="width: 120px;" required>
+                <option value="" disabled selected>Service Type</option>
+                {{#each service_type}}
+                    <option value="{{id}}">{{service_type}}</option>
+                {{/each}}
+            </select>
+            <code style="margin: 0 10px">:</code>
+            <div class="input-field">
+                <input type="text" name="enc_addr_part" class="validate" id="enc_addr_part" autocomplete="nope" required>
+                <label for="enc_addr_part">Encrypted Address Part</label>
+            </div>
+        </div>
+        <ul class="collection with-header black env_variable_list">
+            <li class="collection-header grey darken-4">Environment Variables (Encrypted)</li>
+            <li class="collection-item line black">
+                <button class="btn waves-effect waves-dark add_var_btn" type="button">Add New Variable<i class="material-icons right">add</i></button>
+            </li>
+        </ul>
+
+        <!--Ridiculous bloat needed to prevent FF from assuming the above it username and password and auto filling-->
+        <input type="password" style="display: none;">
+        <input type="password" style="display: none;">
+        <input type="password" style="display: none;">
+        <input type="password" style="display: none;">
+    </div>
+    <div class="modal-footer grey darken-1">
+        <button class="modal-close waves-effect waves-dark btn red darken-1" type="button">Close</button>
+        <button class="btn waves-effect waves-dark" type="submit">Add New Repo<i class="material-icons right">add</i></button>
+    </div>
 </form>
 <a href="/account/" style="flex: 1 0 auto;" class="edit_account">
     <button class="btn waves-effect waves-dark white-text"><i class="material-icons left">account_circle</i> Edit Account</button>
@@ -102,7 +257,25 @@
     <button class="btn red waves-effect waves-dark darken-2" type="submit" name="logout" id="logout">Logout
         <i class="material-icons right">exit_to_app</i></button>
 </form>
+
+<select title="Environment Variable Name" class="browser-default" id="env_name_template" name="env_var_names_list" required>
+    <option value="-1" disabled selected>Select One</option>
+    {{#each env_names}}
+        <option value="{{id}}">{{env_name}}</option>
+    {{/each}}
+</select>
+
 <div class="footer"></div>
+<script>
+    const service_names = new Set();
+        {{#each services}}
+        service_names.add("{{name}}");
+        {{/each}}
+    const repo_names = new Set();
+        {{#each configs}}
+        service_names.add("{{name}}");
+        {{/each}}
+</script>
 <script src="/public/js/index.js"></script>
 </body>
 </html>

@@ -6,8 +6,8 @@ body {
   height: 100vh;
   display: grid;
   grid-template-columns: 10% 1fr 3fr 1fr 10%;
-  grid-template-rows: 175px max-content auto min-content 200px;
-  grid-template-areas: ". lHeader header rHeader ." ". content content content ." ". . . . ." ". . addbox . ." "footer footer footer footer footer";
+  grid-template-rows: 175px max-content max-content auto min-content 150px;
+  grid-template-areas: ". lHeader header rHeader ." ". tabs tabs tabs ." ". content content content ." ". . . . ." ". . addbox . ." "footer footer footer footer footer";
 }
 
 input {
