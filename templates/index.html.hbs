@@ -62,6 +62,18 @@
     </div>
 </form>
 
+<form id="delete_config_confirm_modal" class="modal red darken-4" method="post" action="/delete/repo/">
+    <div class="modal-content">
+        <h4>Delete repository confirmation: <span class="repo_name"></span></h4>
+        <p>Are you sure you want to delete [<span class="repo_name"></span>]?</p>
+        <p>(Your data will be unchanged, you just have to re-add the repository connection if you want to access it through this site)</p>
+    </div>
+    <div class="modal-footer grey darken-1">
+        <button class="modal-close waves-effect waves-dark btn btn-flat white-text" type="button">Cancel</button>
+        <button class="waves-effect waves-dark btn red darken-2 delete_btn" type="submit">Confirm Delete<i class="material-icons right">delete</i></button>
+    </div>
+</form>
+
 {{#each services}}
     <form id="edit_service_{{name}}_modal" class="modal grey darken-3" method="post" action="edit/service/{{url_encode name}}">
         <div class="modal-content">
@@ -130,9 +142,10 @@
                     <button class="btn btn-flat waves-effect waves-dark white-text edge_btn edit no_radius modal-trigger" data-target="edit_repo_{{name}}_modal">
                         <i class="material-icons">edit</i>
                     </button>
-                    <form method="post" action="/delete/repo/{{url_encode name}}" class="edge_btn">
-                        <button class="btn btn-flat waves-effect waves-dark white-text delete"><i class="material-icons">delete</i></button>
-                    </form>
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn delete modal-trigger" data-target="delete_config_confirm_modal"
+                            data-delete_name="{{url_encode name}}">
+                        <i class="material-icons">delete</i>
+                    </button>
                 </div>
                 <div class="progress invisible">
                     <div class="indeterminate"></div>

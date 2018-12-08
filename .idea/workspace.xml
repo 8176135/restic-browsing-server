@@ -9,24 +9,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Added compiled css files">
+    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Added confirmation dialog for deleting repositories">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/index.css.map" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/index.css.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/index.scss" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/index.scss" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/main.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/main.css.map" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/main.css.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/main.scss" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/main.scss" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/public/js/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/public/js/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/account_management.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/account_management.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/db_tables.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/db_tables.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/helper.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/helper.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/account.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/account.html.hbs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/templates/index.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html.hbs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/signup.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/signup.html.hbs" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -52,11 +38,11 @@
     <session id="591583711">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="27" />
+          <entry key="project.closed" value="28" />
           <entry key="project.open.time.1" value="3" />
           <entry key="project.open.time.12" value="2" />
           <entry key="project.open.time.14" value="3" />
-          <entry key="project.open.time.15" value="3" />
+          <entry key="project.open.time.15" value="4" />
           <entry key="project.open.time.16" value="2" />
           <entry key="project.open.time.17" value="5" />
           <entry key="project.open.time.18" value="2" />
@@ -74,7 +60,7 @@
           <entry key="project.open.time.67" value="1" />
           <entry key="project.open.time.8" value="1" />
           <entry key="project.open.time.9" value="1" />
-          <entry key="project.opened" value="41" />
+          <entry key="project.opened" value="42" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -83,12 +69,12 @@
           <entry key="css" value="8" />
           <entry key="database_url" value="2" />
           <entry key="gitignore" value="2" />
-          <entry key="hbs" value="46" />
+          <entry key="hbs" value="47" />
           <entry key="html" value="2" />
-          <entry key="js" value="35" />
+          <entry key="js" value="36" />
           <entry key="lock" value="2" />
           <entry key="rs" value="73" />
-          <entry key="scss" value="40" />
+          <entry key="scss" value="41" />
           <entry key="toml" value="11" />
           <entry key="ts" value="1" />
         </counts>
@@ -97,11 +83,11 @@
         <counts>
           <entry key="CSS" value="8" />
           <entry key="HTML" value="2" />
-          <entry key="Handlebars/Mustache" value="46" />
-          <entry key="JavaScript" value="35" />
+          <entry key="Handlebars/Mustache" value="47" />
+          <entry key="JavaScript" value="36" />
           <entry key="PLAIN_TEXT" value="6" />
           <entry key="Rust" value="73" />
-          <entry key="SCSS" value="40" />
+          <entry key="SCSS" value="41" />
           <entry key="TOML file" value="13" />
           <entry key="TypeScript" value="1" />
         </counts>
@@ -111,21 +97,21 @@
           <entry key="css" value="934" />
           <entry key="database_url" value="13" />
           <entry key="gitignore" value="22" />
-          <entry key="hbs" value="7807" />
-          <entry key="js" value="4056" />
+          <entry key="hbs" value="7873" />
+          <entry key="js" value="4099" />
           <entry key="rs" value="25713" />
           <entry key="scss" value="3751" />
           <entry key="toml" value="172" />
-          <entry key="txt" value="831" />
+          <entry key="txt" value="1094" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="CSS" value="934" />
           <entry key="HTML" value="18" />
-          <entry key="Handlebars/Mustache" value="7807" />
-          <entry key="JavaScript" value="4038" />
-          <entry key="PLAIN_TEXT" value="866" />
+          <entry key="Handlebars/Mustache" value="7873" />
+          <entry key="JavaScript" value="4081" />
+          <entry key="PLAIN_TEXT" value="1129" />
           <entry key="Rust" value="25713" />
           <entry key="SCSS" value="3751" />
           <entry key="TOML file" value="172" />
@@ -151,18 +137,12 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="571">
-              <caret line="628" column="67" selection-start-line="628" selection-start-column="67" selection-end-line="628" selection-end-column="67" />
+            <state relative-caret-position="414">
+              <caret line="496" column="16" selection-start-line="496" selection-start-column="8" selection-end-line="496" selection-end-column="16" />
               <folding>
-                <element signature="e#8643#8644#0" expanded="true" />
-                <element signature="e#8667#8668#0" expanded="true" />
-                <element signature="e#14449#14450#0" expanded="true" />
-                <element signature="e#14479#14480#0" expanded="true" />
-                <element signature="e#14528#14529#0" expanded="true" />
-                <element signature="e#14565#14566#0" expanded="true" />
                 <marker date="1544219652447" expanded="true" signature="16545:17837" ph="..." />
                 <marker date="1544219652447" expanded="false" signature="19250:20279" ph="..." />
               </folding>
@@ -182,17 +162,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1117">
+            <state relative-caret-position="2751">
               <caret line="131" column="25" selection-start-line="131" selection-start-column="25" selection-end-line="131" selection-end-column="25" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1365">
-              <caret line="65" column="22" selection-start-line="65" selection-start-column="19" selection-end-line="65" selection-end-column="22" />
+            <state relative-caret-position="550">
+              <caret line="69" column="10" lean-forward="true" selection-start-line="69" selection-start-column="10" selection-end-line="69" selection-end-column="10" />
             </state>
           </provider>
         </entry>
@@ -209,8 +189,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/js/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-406">
-              <caret line="24" column="30" selection-start-line="24" selection-start-column="30" selection-end-line="24" selection-end-column="30" />
+            <state relative-caret-position="560">
+              <caret line="84" column="52" selection-start-line="84" selection-start-column="43" selection-end-line="84" selection-end-column="52" />
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
               </folding>
@@ -241,9 +221,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>owning_service\</find>
-      <find>footer</find>
-      <find>#each servi</find>
       <find>edit_service_nam</find>
       <find>input</find>
       <find>same</find>
@@ -253,7 +230,6 @@
       <find>repo_name_check</find>
       <find>add</find>
       <find>null</find>
-      <find>repo</find>
       <find>service</find>
       <find>edit_</find>
       <find>password</find>
@@ -271,6 +247,10 @@
       <find>testing</find>
       <find>basesL</find>
       <find>replace</find>
+      <find>config_name</find>
+      <find>delete_conf</find>
+      <find>/delete/</find>
+      <find>repo</find>
     </findStrings>
     <replaceStrings>
       <replace>:</replace>
@@ -316,10 +296,10 @@
         <option value="$PROJECT_DIR$/public/css/main.scss" />
         <option value="$PROJECT_DIR$/src/helper.rs" />
         <option value="$PROJECT_DIR$/Cargo.toml" />
-        <option value="$PROJECT_DIR$/templates/index.html.hbs" />
-        <option value="$PROJECT_DIR$/public/js/index.js" />
         <option value="$PROJECT_DIR$/src/db_tables.rs" />
         <option value="$PROJECT_DIR$/src/main.rs" />
+        <option value="$PROJECT_DIR$/public/js/index.js" />
+        <option value="$PROJECT_DIR$/templates/index.html.hbs" />
       </list>
     </option>
   </component>
@@ -360,6 +340,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -403,7 +384,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -513,7 +493,8 @@
       <workItem from="1543957232837" duration="8349000" />
       <workItem from="1544043413059" duration="20045000" />
       <workItem from="1544129770833" duration="16588000" />
-      <workItem from="1544218887680" duration="764000" />
+      <workItem from="1544218887680" duration="2724000" />
+      <workItem from="1544301989299" duration="1968000" />
     </task>
     <task id="LOCAL-00001" summary="Registration page frontend prototyped">
       <created>1536902229985</created>
@@ -606,17 +587,24 @@
       <option name="project" value="LOCAL" />
       <updated>1543267490392</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Massive revamp of internals, fully generalized, all restic services with the exception of rclone will be able to be accessed.">
+      <created>1544219962386</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1544219962386</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="510288000" />
+    <option name="totallyTimeSpent" value="514216000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="57" y="-5" width="2508" height="1450" extended-state="6" />
+    <frame x="58" y="-5" width="2507" height="1450" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.109298535" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.11015912" />
       <window_info id="Structure" order="1" sideWeight="0.5022659" side_tool="true" weight="0.109298535" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -680,7 +668,8 @@
     <MESSAGE value="Popup modal for errors, check for uniqueness when inserting or updating database.&#10;&#10;Also:&#10;Fixed footer&#10;Delete Repository working&#10;Flash working&#10;Edit button added&#10;B2 errors displayed to user&#10;Handlebar helpers&#10;Repository Fully UTF-8 names working, url encoding in links" />
     <MESSAGE value="Added account management, moved css around a bit." />
     <MESSAGE value="Added compiled css files" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added compiled css files" />
+    <MESSAGE value="Massive revamp of internals, fully generalized, all restic services with the exception of rclone will be able to be accessed." />
+    <option name="LAST_COMMIT_MESSAGE" value="Massive revamp of internals, fully generalized, all restic services with the exception of rclone will be able to be accessed." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -999,17 +988,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
+    <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1365">
-          <caret line="65" column="22" selection-start-line="65" selection-start-column="19" selection-end-line="65" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/public/css/main.scss">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="17" selection-start-column="17" selection-end-column="17" />
+        <state relative-caret-position="2751">
+          <caret line="131" column="25" selection-start-line="131" selection-start-column="25" selection-end-line="131" selection-end-column="25" />
         </state>
       </provider>
     </entry>
@@ -1020,37 +1002,38 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/public/css/main.scss">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="17" selection-start-column="17" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="414">
+          <caret line="496" column="16" selection-start-line="496" selection-start-column="8" selection-end-line="496" selection-end-column="16" />
+          <folding>
+            <marker date="1544219652447" expanded="true" signature="16545:17837" ph="..." />
+            <marker date="1544219652447" expanded="false" signature="19250:20279" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/public/js/index.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-406">
-          <caret line="24" column="30" selection-start-line="24" selection-start-column="30" selection-end-line="24" selection-end-column="30" />
+        <state relative-caret-position="560">
+          <caret line="84" column="52" selection-start-line="84" selection-start-column="43" selection-end-line="84" selection-end-column="52" />
           <folding>
             <element signature="e#0#29#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
+    <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1117">
-          <caret line="131" column="25" selection-start-line="131" selection-start-column="25" selection-end-line="131" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="571">
-          <caret line="628" column="67" selection-start-line="628" selection-start-column="67" selection-end-line="628" selection-end-column="67" />
-          <folding>
-            <element signature="e#8643#8644#0" expanded="true" />
-            <element signature="e#8667#8668#0" expanded="true" />
-            <element signature="e#14449#14450#0" expanded="true" />
-            <element signature="e#14479#14480#0" expanded="true" />
-            <element signature="e#14528#14529#0" expanded="true" />
-            <element signature="e#14565#14566#0" expanded="true" />
-            <marker date="1544219652447" expanded="true" signature="16545:17837" ph="..." />
-            <marker date="1544219652447" expanded="false" signature="19250:20279" ph="..." />
-          </folding>
+        <state relative-caret-position="550">
+          <caret line="69" column="10" lean-forward="true" selection-start-line="69" selection-start-column="10" selection-end-line="69" selection-end-column="10" />
         </state>
       </provider>
     </entry>

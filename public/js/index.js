@@ -69,13 +69,21 @@ $(document).ready(function () {
     $('.add_var_btn').click((ev) => {
         adding_options(ev.target);
     });
-    const delete_confirm_modal = $("#delete_service_confirm_modal");
+    const delete_service_confirm_modal = $("#delete_service_confirm_modal");
+    const delete_config_confirm_modal = $("#delete_config_confirm_modal");
     let last_confirm_url;
     $("#service_list_content .delete.btn").click((ev) => {
         let delete_url = $(ev.target).attr("data-delete_name");
         last_confirm_url = delete_url;
-        delete_confirm_modal.find(".service_name").text(decodeURIComponent(delete_url.replace(/\+/g, ' ')));
-        delete_confirm_modal.attr("action", "/delete/service/" + delete_url)
+        delete_service_confirm_modal.find(".service_name").text(decodeURIComponent(delete_url.replace(/\+/g, ' ')));
+        delete_service_confirm_modal.attr("action", "/delete/service/" + delete_url)
+    });
+
+    $("#repo_list_content .delete.btn").click((ev) => {
+        let delete_url = $(ev.target).attr("data-delete_name");
+        last_confirm_url = delete_url;
+        delete_config_confirm_modal.find(".repo_name").text(decodeURIComponent(delete_url.replace(/\+/g, ' ')));
+        delete_config_confirm_modal.attr("action", "/delete/repo/" + delete_url)
     });
 });
 
