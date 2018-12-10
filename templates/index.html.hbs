@@ -22,7 +22,12 @@
     <form id="edit_repo_{{name}}_modal" class="modal grey darken-3" method="post" action="edit/repo/{{url_encode name}}">
         <div class="modal-content">
             <h4>Edit repo: {{name}}</h4>
-
+            <div class="line">
+                <div class="input-field">
+                    <input type="text" id="{{name}}_new_name" class="repo_name_input white-text" name="edit_repo_name" onblur="repo_name_check(this)" maxlength="63" value="{{name}}" autocomplete="off" required>
+                    <label for="{{name}}_new_name">New Repository Name</label>
+                </div>
+            </div>
             <div class="line">
                 <select required title="owning_service" name="owning_service" data-selected="{{owning_service}}" class="validate preselect" style="flex: 1 0 auto;">
                     <option value="" disabled>Select base Service</option>
@@ -31,11 +36,11 @@
                     {{/each}}
                 </select>
                 <div class="input-field" style="flex: 10 0 auto;">
-                    <input type="text" id="{{name}}_new_name" class="repo_name_input white-text" name="edit_repo_name" onblur="repo_name_check(this)" maxlength="63" value="{{name}}" autocomplete="off" required>
-                    <label for="{{name}}_new_name">New Repository Name</label>
+                    <input type="text" id="{{name}}_new_path" class="repo_path_input white-text" name="edit_repo_path" maxlength="255" value="{{path}}" required>
+                    <label for="{{name}}_new_path">New Repository Path  (Appended to service path)</label>
                 </div>
-            </div>
 
+            </div>
             <div class="input-field">
                 <input type="password" id="{{name}}_new_password" class="repo_password_input white-text" name="edit_repo_password" placeholder="[Same Password]"
                        autocomplete="off">
@@ -196,6 +201,12 @@
     <div class="modal-content">
         <h4>Add new repository</h4>
         <div class="line">
+            <div class="input-field">
+                <input type="text" name="new_repo_name" id="new_repo_name" class="validate" autocomplete="off" maxlength="63" onblur="repo_name_check(this)" required>
+                <label for="new_repo_name">New Repository Name</label>
+            </div>
+        </div>
+        <div class="line">
             <select required title="owning_service" name="owning_service" class="validate" style="flex: 1 0 auto;">
                 <option value="" selected disabled>Select base Service</option>
                 {{#each services}}
@@ -203,8 +214,8 @@
                 {{/each}}
             </select>
             <div class="input-field" style="flex: 10 1 auto;">
-                <input type="text" name="new_repo_name" id="new_repo_name" class="validate" autocomplete="off" maxlength="63" onblur="repo_name_check(this)" required>
-                <label for="new_repo_name">New Repository Name/Path</label>
+                <input type="text" name="new_repo_path" id="new_repo_path" class="validate" autocomplete="off" maxlength="255" required>
+                <label for="new_repo_path">New Repository Path (Appended to service path)</label>
             </div>
         </div>
 
@@ -241,7 +252,7 @@
             </select>
             <code style="margin: 0 10px">:</code>
             <div class="input-field">
-                <input type="text" name="enc_addr_part" class="validate" id="enc_addr_part" autocomplete="off" required>
+                <input type="text" name="enc_addr_part" class="validate" id="enc_addr_part" autocomplete="off" maxlength="180" required>
                 <label for="enc_addr_part">Encrypted Address Part</label>
             </div>
         </div>

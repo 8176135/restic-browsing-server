@@ -14,6 +14,7 @@ table! {
         id -> Integer,
         owning_user -> Integer,
         name -> Text,
+        path -> Text,
         encryption_password -> Text,
         service_used -> Integer,
     }
@@ -55,6 +56,7 @@ table! {
 table! {
     QueryView (name, owning_user) {
         name -> Text,
+        path -> Text,
         owning_user -> Integer,
         encryption_password -> Text,
         service_name -> Text,
@@ -83,7 +85,7 @@ allow_tables_to_appear_in_same_query!(ConnectionInfo, Users);
 allow_tables_to_appear_in_same_query!(ConnectionInfo, Services);
 
 use diesel::sql_types::{Integer, Text, Nullable};
-sql_function!(fn update_repositories(service_name: Text, owning_user: Integer, repo_name: Text, old_repo_name: Text, encryption_password: Nullable<Text>) -> Integer);
+sql_function!(fn update_repositories(service_name: Text, owning_user: Integer, repo_name: Text, old_repo_name: Text, newPath: Text, encryption_password: Nullable<Text>) -> Integer);
 
 #[derive(Insertable, Debug)]
 #[table_name = "Users"]
@@ -140,6 +142,7 @@ pub struct DbBasesList {
 pub struct ConnectionInfoIns {
     pub owning_user: i32,
     pub name: String,
+    pub path: String,
     pub encryption_password: String,
     pub service_used: i32,
 }
@@ -165,6 +168,7 @@ pub struct ServiceContentIns {
 #[table_name = "QueryView"]
 pub struct DbQueryView {
     pub name: String,
+    pub path: String,
     pub owning_user: i32,
     pub encryption_password: String,
     pub service_name: String,

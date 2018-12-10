@@ -15,7 +15,7 @@ function adding_options(target, selected_data) {
     list_item.append(env_name_template);
     list_item.append(`
                 <div class="input-field">
-                    <input type="text" name="env_value_list" id="env_value_${counter}" autocomplete="nope" required>
+                    <input type="text" name="env_value_list" id="env_value_${counter}" autocomplete="nope" maxlength="180" required>
                     <label for="env_value_${counter}">Env-var Value</label>
                 </div>`);
     let del_btn = $(`<button class="btn btn-flat waves-effect waves-dark white-text delete" type="button"><i class="material-icons">delete</i></button>`);

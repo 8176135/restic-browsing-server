@@ -193,19 +193,14 @@ pub fn verify_user(db_entry: &db_tables::DbUserLogin, password_candi: &str) -> b
                          base64::decode(&db_entry.password).unwrap().as_ref()).is_ok()
 }
 
-pub fn restic_db(folder_name: &str, user: &::User) -> Result<Command, ()> {
+pub fn restic_db(repo_name: &str, user: &::User) -> Result<Command, ()> {
     use db_tables::QueryView;
 
     let con = est_db_con();
-//    let data: Vec<db_tables::DbEncryptedData> = Users::dsl::Users.inner_join(ConnectionInfo::table)
-////        .select((ConnectionInfo::name, ConnectionInfo::encryption_password))
-////        .filter(Users::id.eq(user.id))
-////        .filter(&ConnectionInfo::name.eq(folder_name))
-////        .load::<db_tables::DbEncryptedData>(&con).expect("Failed to connect with db");
 
     let data: Vec<db_tables::DbQueryView> = QueryView::dsl::QueryView
         .filter(QueryView::owning_user.eq(user.id))
-        .filter(QueryView::name.eq(folder_name))
+        .filter(QueryView::name.eq(repo_name))
         .load::<db_tables::DbQueryView>(&con).expect("Can't select QueryView");
 
     if data.is_empty() {
@@ -213,17 +208,11 @@ pub fn restic_db(folder_name: &str, user: &::User) -> Result<Command, ()> {
     }
     let first = &data[0];
 
-//    Ok(restic(&decrypt(&data.b2_acc_key, &user.encryption_password),
-//              &decrypt(&data.b2_acc_id, &user.encryption_password),
-//              &data.b2_bucket_name,
-//              &folder_name,
-//              &decrypt(&data.encryption_password, &user.encryption_password)))
-
     Ok(restic(
         &data.iter().map(|c| (c.env_name.clone(), decrypt(&c.encrypted_env_value, &user.encryption_password))).collect(),
         &first.service_type,
         &decrypt(&first.enc_addr_part, &user.encryption_password),
-        &folder_name,
+        &first.path,
         &decrypt(&first.encryption_password, &user.encryption_password)))
 }
 

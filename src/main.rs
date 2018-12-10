@@ -52,6 +52,7 @@ struct Registration {
 #[derive(FromForm)]
 struct AddNewRepoForm {
     new_repo_name: String,
+    new_repo_path: String,
     new_repo_password: String,
     owning_service: String,
 }
@@ -112,6 +113,7 @@ impl<'f> FromForm<'f> for AddNewServiceForm {
 #[derive(FromForm)]
 struct EditRepoForm {
     edit_repo_name: String,
+    edit_repo_path: String,
     edit_repo_password: String,
     owning_service: String,
 }
@@ -201,6 +203,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
     #[derive(Serialize, Queryable)]
     struct ConInfoData {
         name: String,
+        path: String,
         owning_service: String,
     }
 
@@ -242,7 +245,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
     let con = helper::est_db_con();
 
     item.configs = ConnectionInfo::dsl::ConnectionInfo.inner_join(Services::table)
-        .select((ConnectionInfo::name, Services::service_name))
+        .select((ConnectionInfo::name, ConnectionInfo::path, Services::service_name))
         .filter(ConnectionInfo::owning_user.eq(user.id))
         .load::<ConInfoData>(&con).expect("Folder name query not going through");
 
@@ -274,8 +277,8 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
     Redirect::to("/")
 }
 
-#[get("/bucket/<conn_name>")]
-fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redirect>> {
+#[get("/bucket/<repo_name>")]
+fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redirect>> {
     use std::path::PathBuf;
 
     #[derive(Serialize)]
@@ -284,7 +287,7 @@ fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redi
         status_msg: String,
         files: String,
     }
-    if let Ok(mut cmd) = helper::restic_db(&conn_name, &user) {
+    if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
         let out = cmd.arg("ls")
             .arg("-l")
             .arg("latest")
@@ -318,7 +321,6 @@ fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redi
             if c.chars().next().expect("suddenly no next character,") == 'd' {
                 folder_path.push('/');
             }
-//            println!("folder_path: {}", folder_path);
             folder_path.trim().to_owned()
         }).collect();
 
@@ -361,29 +363,29 @@ fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redi
         }
 
         let mut guard = PATH_CACHE.lock().unwrap();
-        guard.insert((user.id as i16, conn_name.clone()), all_files);
+        guard.insert((user.id as i16, repo_name.clone()), all_files);
 
         Ok(Template::render("bucket",
                             BucketsData {
-                                repo_name: conn_name.to_owned(),
+                                repo_name: repo_name.to_owned(),
                                 status_msg: String::new(),
                                 files: final_html,
                             }))
     } else {
         Err(Flash::error(
             Redirect::to("/"),
-            format!("Repository [{}] not in repo list, add the repo in the <Add new repository> box!", conn_name)))
+            format!("Repository [{}] not in repo list, add the repo in the <Add new repository> box!", repo_name)))
     }
 }
 
-#[post("/bucket/<folder_name>/download", data = "<file_paths>")]
-fn download_data(user: User, folder_name: String, file_paths: Json<Vec<usize>>) -> Result<Vec<u8>, NotFound<String>> {
+#[post("/bucket/<repo_name>/download", data = "<file_paths>")]
+fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) -> Result<Vec<u8>, NotFound<String>> {
     use std::fs;
     let guard = PATH_CACHE.lock().unwrap();
-    if let Some(all_paths) = guard.get(&(user.id as i16, folder_name.clone())) {
+    if let Some(all_paths) = guard.get(&(user.id as i16, repo_name.clone())) {
         let file_paths: Vec<usize> = file_paths.into_inner();
 
-        if let Ok(mut cmd) = helper::restic_db(&folder_name, &user) {
+        if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
             helper::delete_dir_contents(fs::read_dir(TEMP_STORAGE_PATH));
 
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", TEMP_STORAGE_PATH));
@@ -465,32 +467,9 @@ fn edit_repo(user: User, repo_name: String, new_data: Form<EditRepoForm>) -> Fla
     }
     let con = helper::est_db_con();
     let repo_pass = if new_data.edit_repo_password.is_empty() { None } else { Some(helper::encrypt(&new_data.edit_repo_password, &user.encryption_password)) };
-    diesel::select(db_tables::update_repositories(&new_data.owning_service, user.id, &new_data.edit_repo_name, &repo_name, repo_pass))
+    diesel::select(db_tables::update_repositories(&new_data.owning_service, user.id, &new_data.edit_repo_name, &repo_name, &new_data.edit_repo_path, repo_pass))
         .execute(&con).unwrap();
-//    use db_tables::ConnectionInfo::dsl::*;
-////    let update_statement = diesel::update(
-////        ConnectionInfo.filter(owning_user.eq(user.id)).filter(name.eq(&repo_name)));
-////
-////    let update_result;
-////
-////    if new_data.edit_repo_password.is_empty() {
-////        if repo_name == new_data.edit_repo_name {
-////            return Flash::error(Redirect::to("/"), "Repo name and password is the same, so nothing happened");
-////        }
-////        update_result = update_statement.set(name.eq(&new_data.edit_repo_name)).execute(&con)
-////    } else {
-////        update_result = update_statement.set((name.eq(&new_data.edit_repo_name),
-////                                              encryption_password.eq(&helper::encrypt(
-////                                                  &new_data.edit_repo_password, &user.encryption_password)))).execute(&con)
-////    }
-////
-////    use helper::IsUnique::*;
-////    match helper::check_for_unique_error(update_result).expect("Failed to edit new repository") {
-////        Unique(_) => Flash::success(Redirect::to("/"), format!("Successfully edited repository <{}>", new_data.edit_repo_name)),
-////        NonUnique => {
-////            Flash::error(Redirect::to("/"), "New repository name already exists.")
-////        }
-////    }
+
     Flash::success(Redirect::to("/"), format!("Successfully edited repository <{}>", new_data.edit_repo_name))
 }
 
@@ -524,7 +503,7 @@ fn add_more_repos(user: User, name: Form<AddNewRepoForm>) -> Flash<Redirect> {
 
     let con = helper::est_db_con();
     println!("{}", name.owning_service);
-    diesel::select(update_repositories(&name.owning_service, user.id, &name.new_repo_name, &name.new_repo_name, helper::encrypt(&name.new_repo_password, &user.encryption_password)))
+    diesel::select(update_repositories(&name.owning_service, user.id, &name.new_repo_name, &name.new_repo_name, &name.new_repo_path, helper::encrypt(&name.new_repo_password, &user.encryption_password)))
         .execute(&con).unwrap();
 //    let service_id = Services::dsl::Services.select(Services::id)
 //        .filter(Services::service_name.eq(&name.owning_service))
