@@ -295,7 +295,7 @@ fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redi
         if error_str.find("b2_download_file_by_name: 404:").is_some() {
             return Err(Flash::error(
                 Redirect::to("/"),
-                "Repository not found on B2, are you sure you spelt the name correctly? (Case Sensitive)"));
+                "Repository not found, are you sure you spelt the name correctly? (Case Sensitive)"));
         }
         if error_str.find("wrong password").is_some() {
             return Err(Flash::error(
@@ -315,7 +315,7 @@ fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redi
                     folder_path.push_str(item);
                 }
             }
-            if c.chars().next().unwrap() == 'd' {
+            if c.chars().next().expect("suddenly no next character,") == 'd' {
                 folder_path.push('/');
             }
 //            println!("folder_path: {}", folder_path);
@@ -335,7 +335,7 @@ fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redi
                 let path = PathBuf::from(path_str);
 
                 while counter != 0 && !path.starts_with(&cur_folder) {
-                    if cur_folder.file_name().unwrap() != std::ffi::OsStr::new(" ") {
+                    if cur_folder.file_name().expect("No file name") != std::ffi::OsStr::new(" ") {
                         final_html.push_str("</ul></li>");
                         counter -= 1;
                     }
@@ -352,7 +352,7 @@ fn get_bucket_data(user: User, conn_name: String) -> Result<Template, Flash<Redi
                 } else {
                     final_html.push_str(
                         &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span></label></li>",
-                                 idx, path.file_name().unwrap().to_str().unwrap()));
+                                 idx, path.file_name().expect("No file name").to_str().unwrap()));
                 }
             }
             for _ in 0..counter {

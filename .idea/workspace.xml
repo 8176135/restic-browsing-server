@@ -11,6 +11,8 @@
   <component name="ChangeListManager">
     <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Added confirmation dialog for deleting repositories.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/index.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html.hbs" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -59,7 +61,8 @@
           <entry key="project.open.time.67" value="1" />
           <entry key="project.open.time.8" value="1" />
           <entry key="project.open.time.9" value="1" />
-          <entry key="project.opened" value="43" />
+          <entry key="project.open.time.93" value="1" />
+          <entry key="project.opened" value="44" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -68,9 +71,9 @@
           <entry key="css" value="8" />
           <entry key="database_url" value="2" />
           <entry key="gitignore" value="2" />
-          <entry key="hbs" value="49" />
+          <entry key="hbs" value="50" />
           <entry key="html" value="2" />
-          <entry key="js" value="37" />
+          <entry key="js" value="38" />
           <entry key="lock" value="2" />
           <entry key="rs" value="73" />
           <entry key="scss" value="42" />
@@ -82,8 +85,8 @@
         <counts>
           <entry key="CSS" value="8" />
           <entry key="HTML" value="2" />
-          <entry key="Handlebars/Mustache" value="49" />
-          <entry key="JavaScript" value="37" />
+          <entry key="Handlebars/Mustache" value="50" />
+          <entry key="JavaScript" value="38" />
           <entry key="PLAIN_TEXT" value="6" />
           <entry key="Rust" value="73" />
           <entry key="SCSS" value="42" />
@@ -96,9 +99,9 @@
           <entry key="css" value="934" />
           <entry key="database_url" value="13" />
           <entry key="gitignore" value="22" />
-          <entry key="hbs" value="7874" />
+          <entry key="hbs" value="7888" />
           <entry key="js" value="4099" />
-          <entry key="rs" value="25713" />
+          <entry key="rs" value="25799" />
           <entry key="scss" value="3751" />
           <entry key="toml" value="172" />
           <entry key="txt" value="1095" />
@@ -108,10 +111,10 @@
         <counts>
           <entry key="CSS" value="934" />
           <entry key="HTML" value="18" />
-          <entry key="Handlebars/Mustache" value="7874" />
+          <entry key="Handlebars/Mustache" value="7888" />
           <entry key="JavaScript" value="4081" />
           <entry key="PLAIN_TEXT" value="1130" />
-          <entry key="Rust" value="25713" />
+          <entry key="Rust" value="25799" />
           <entry key="SCSS" value="3751" />
           <entry key="TOML file" value="172" />
         </counts>
@@ -130,8 +133,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/helper.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5544">
-              <caret line="264" selection-start-line="264" selection-start-column="2" selection-end-line="266" selection-end-column="3" />
+            <state relative-caret-position="424">
+              <caret line="195" column="7" selection-start-line="195" selection-start-column="7" selection-end-line="195" selection-end-column="7" />
             </state>
           </provider>
         </entry>
@@ -139,11 +142,19 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="907">
-              <caret line="676" column="35" selection-start-line="676" selection-start-column="31" selection-end-line="676" selection-end-column="35" />
+            <state relative-caret-position="445">
+              <caret line="297" column="24" selection-start-line="297" selection-start-column="24" selection-end-line="297" selection-end-column="24" />
               <folding>
-                <marker date="1544219652447" expanded="true" signature="16545:17837" ph="..." />
-                <marker date="1544219652447" expanded="false" signature="19250:20279" ph="..." />
+                <element signature="e#6022#6023#0" expanded="true" />
+                <element signature="e#6046#6047#0" expanded="true" />
+                <element signature="e#8642#8643#0" expanded="true" />
+                <element signature="e#8666#8667#0" expanded="true" />
+                <element signature="e#14485#14486#0" expanded="true" />
+                <element signature="e#14515#14516#0" expanded="true" />
+                <element signature="e#14564#14565#0" expanded="true" />
+                <element signature="e#14601#14602#0" expanded="true" />
+                <marker date="1544418817436" expanded="true" signature="16596:17888" ph="..." />
+                <marker date="1544418817436" expanded="false" signature="19301:20330" ph="..." />
               </folding>
             </state>
           </provider>
@@ -167,20 +178,24 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="414">
-              <caret line="194" column="15" selection-start-line="194" selection-start-column="14" selection-end-line="194" selection-end-column="15" />
+            <state relative-caret-position="693">
+              <caret line="33" column="49" lean-forward="true" selection-start-line="33" selection-start-column="49" selection-end-line="33" selection-end-column="49" />
+              <folding>
+                <element signature="e#1395#1418#0#HTML" expanded="true" />
+                <element signature="e#1701#1725#0#HTML" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/templates/login.html.hbs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="693">
-              <caret line="33" column="18" selection-start-line="33" selection-start-column="18" selection-end-line="33" selection-end-column="18" />
+            <state relative-caret-position="462">
+              <caret line="22" column="54" lean-forward="true" selection-start-line="22" selection-start-column="54" selection-end-line="22" selection-end-column="54" />
             </state>
           </provider>
         </entry>
@@ -229,12 +244,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>same</find>
-      <find>same Va</find>
-      <find>[Same</find>
-      <find>this</find>
-      <find>repo_name_check</find>
-      <find>add</find>
       <find>null</find>
       <find>service</find>
       <find>edit_</find>
@@ -259,6 +268,12 @@
       <find>repo</find>
       <find>REGI</find>
       <find>r</find>
+      <find>login</find>
+      <find>delete</find>
+      <find>[</find>
+      <find>repository not found</find>
+      <find>unwrap</find>
+      <find>autocom</find>
     </findStrings>
     <replaceStrings>
       <replace>:</replace>
@@ -304,10 +319,10 @@
         <option value="$PROJECT_DIR$/src/helper.rs" />
         <option value="$PROJECT_DIR$/Cargo.toml" />
         <option value="$PROJECT_DIR$/src/db_tables.rs" />
-        <option value="$PROJECT_DIR$/src/main.rs" />
         <option value="$PROJECT_DIR$/public/js/index.js" />
-        <option value="$PROJECT_DIR$/templates/index.html.hbs" />
         <option value="$PROJECT_DIR$/templates/login.html.hbs" />
+        <option value="$PROJECT_DIR$/src/main.rs" />
+        <option value="$PROJECT_DIR$/templates/index.html.hbs" />
       </list>
     </option>
   </component>
@@ -504,6 +519,7 @@
       <workItem from="1544218887680" duration="2724000" />
       <workItem from="1544301989299" duration="2003000" />
       <workItem from="1544306992127" duration="1243000" />
+      <workItem from="1544389964442" duration="7534000" />
     </task>
     <task id="LOCAL-00001" summary="Registration page frontend prototyped">
       <created>1536902229985</created>
@@ -614,13 +630,13 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="515494000" />
+    <option name="totallyTimeSpent" value="523028000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="58" y="-5" width="2507" height="1450" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.11097511" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.111791104" />
       <window_info id="Structure" order="1" sideWeight="0.5022659" side_tool="true" weight="0.109298535" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -984,31 +1000,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/helper.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5544">
-          <caret line="264" selection-start-line="264" selection-start-column="2" selection-end-line="266" selection-end-column="3" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Cargo.toml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="462">
-          <caret line="22" column="24" selection-start-line="22" selection-start-column="24" selection-end-line="22" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2751">
           <caret line="131" column="25" selection-start-line="131" selection-start-column="25" selection-end-line="131" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/public/css/main.scss">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="17" selection-start-column="17" selection-end-column="17" />
         </state>
       </provider>
     </entry>
@@ -1029,28 +1024,61 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/helper.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="424">
+          <caret line="195" column="7" selection-start-line="195" selection-start-column="7" selection-end-line="195" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/css/main.scss">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="17" selection-start-column="17" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/templates/login.html.hbs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="462">
+          <caret line="22" column="54" lean-forward="true" selection-start-line="22" selection-start-column="54" selection-end-line="22" selection-end-column="54" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Cargo.toml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="462">
+          <caret line="22" column="24" selection-start-line="22" selection-start-column="24" selection-end-line="22" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="907">
-          <caret line="676" column="35" selection-start-line="676" selection-start-column="31" selection-end-line="676" selection-end-column="35" />
+        <state relative-caret-position="445">
+          <caret line="297" column="24" selection-start-line="297" selection-start-column="24" selection-end-line="297" selection-end-column="24" />
           <folding>
-            <marker date="1544219652447" expanded="true" signature="16545:17837" ph="..." />
-            <marker date="1544219652447" expanded="false" signature="19250:20279" ph="..." />
+            <element signature="e#6022#6023#0" expanded="true" />
+            <element signature="e#6046#6047#0" expanded="true" />
+            <element signature="e#8642#8643#0" expanded="true" />
+            <element signature="e#8666#8667#0" expanded="true" />
+            <element signature="e#14485#14486#0" expanded="true" />
+            <element signature="e#14515#14516#0" expanded="true" />
+            <element signature="e#14564#14565#0" expanded="true" />
+            <element signature="e#14601#14602#0" expanded="true" />
+            <marker date="1544418817436" expanded="true" signature="16596:17888" ph="..." />
+            <marker date="1544418817436" expanded="false" signature="19301:20330" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="414">
-          <caret line="194" column="15" selection-start-line="194" selection-start-column="14" selection-end-line="194" selection-end-column="15" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/templates/login.html.hbs">
-      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="693">
-          <caret line="33" column="18" selection-start-line="33" selection-start-column="18" selection-end-line="33" selection-end-column="18" />
+          <caret line="33" column="49" lean-forward="true" selection-start-line="33" selection-start-column="49" selection-end-line="33" selection-end-column="49" />
+          <folding>
+            <element signature="e#1395#1418#0#HTML" expanded="true" />
+            <element signature="e#1701#1725#0#HTML" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

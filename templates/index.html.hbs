@@ -31,7 +31,7 @@
                     {{/each}}
                 </select>
                 <div class="input-field" style="flex: 10 0 auto;">
-                    <input type="text" id="{{name}}_new_name" class="repo_name_input white-text" name="edit_repo_name" onblur="repo_name_check(this)" maxlength="63" value="{{name}}" required>
+                    <input type="text" id="{{name}}_new_name" class="repo_name_input white-text" name="edit_repo_name" onblur="repo_name_check(this)" maxlength="63" value="{{name}}" autocomplete="off" required>
                     <label for="{{name}}_new_name">New Repository Name</label>
                 </div>
             </div>
