@@ -38,7 +38,7 @@
 
             <div class="input-field">
                 <input type="password" id="{{name}}_new_password" class="repo_password_input white-text" name="edit_repo_password" placeholder="[Same Password]"
-                       autocomplete="nope">
+                       autocomplete="off">
                 <label for="{{name}}_new_password">New Repository Password</label>
             </div>
         </div>
@@ -92,7 +92,7 @@
                 </select>
                 <code style="margin: 0 10px">:</code>
                 <div class="input-field">
-                    <input type="text" name="enc_addr_part" id="enc_addr_{{name}}_part" placeholder="[Same Address]" autocomplete="nope">
+                    <input type="text" name="enc_addr_part" id="enc_addr_{{name}}_part" placeholder="[Same Address]" autocomplete="off">
                     <label for="enc_addr_{{name}}_part">Encrypted Address Part</label>
                 </div>
             </div>
@@ -203,13 +203,13 @@
                 {{/each}}
             </select>
             <div class="input-field" style="flex: 10 1 auto;">
-                <input type="text" name="new_repo_name" id="new_repo_name" class="validate" autocomplete="nope" maxlength="63" onblur="repo_name_check(this)" required>
+                <input type="text" name="new_repo_name" id="new_repo_name" class="validate" autocomplete="off" maxlength="63" onblur="repo_name_check(this)" required>
                 <label for="new_repo_name">New Repository Name/Path</label>
             </div>
         </div>
 
         <div class="input-field">
-            <input type="password" name="new_repo_password" id="new_repo_password" autocomplete="nope">
+            <input type="password" name="new_repo_password" id="new_repo_password" autocomplete="off">
             <label for="new_repo_password">New Repository Password</label>
         </div>
         <!--Ridiculous bloat needed to prevent FF from assuming the above it username and password and auto filling-->
@@ -228,7 +228,7 @@
     <div class="modal-content">
         <h4>Add new service</h4>
         <div class="input-field">
-            <input type="text" name="new_service_name" id="new_service_name" class="validate" autocomplete="nope" onblur="service_name_check(this)" maxlength="63" required>
+            <input type="text" name="new_service_name" id="new_service_name" class="validate" autocomplete="off" onblur="service_name_check(this)" maxlength="63" required>
             <label for="new_service_name">New Service Name</label>
         </div>
         <div class="line">
@@ -241,7 +241,7 @@
             </select>
             <code style="margin: 0 10px">:</code>
             <div class="input-field">
-                <input type="text" name="enc_addr_part" class="validate" id="enc_addr_part" autocomplete="nope" required>
+                <input type="text" name="enc_addr_part" class="validate" id="enc_addr_part" autocomplete="off" required>
                 <label for="enc_addr_part">Encrypted Address Part</label>
             </div>
         </div>
