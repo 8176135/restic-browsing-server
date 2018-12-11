@@ -277,19 +277,31 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
     Redirect::to("/")
 }
 
-#[get("/bucket/<repo_name>")]
-fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redirect>> {
-    use std::path::PathBuf;
-
-    #[derive(Serialize)]
-    struct BucketsData {
-        repo_name: String,
-        status_msg: String,
-        files: String,
-    }
+#[post("/preview/<repo_name>")]
+fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<String>> {
     if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
-        let out = cmd.arg("ls")
-            .arg("-l")
+            cmd.arg("ls")
+                .arg("-l")
+                .arg("latest");
+            Ok(format!("{:?}", cmd))
+        } else {
+            Err(NotFound("Repository doesn't exist".to_owned()))
+        }
+    }
+
+    #[get("/bucket/<repo_name>")]
+    fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redirect>> {
+        use std::path::PathBuf;
+
+        #[derive(Serialize)]
+        struct BucketsData {
+            repo_name: String,
+            status_msg: String,
+            files: String,
+        }
+        if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
+            let out = cmd.arg("ls")
+                .arg("-l")
             .arg("latest")
             .output().unwrap();
 
@@ -435,18 +447,6 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     let (password, salt) = helper::encrypt_password(&registration.password);
 
     let enc = helper::get_random_stuff(32);
-
-//    if B2_APP_KEY_TEST.is_match(&registration.b2_acc_key) {
-//        return Flash::error(Redirect::to("/register/"), "Invalid characters in Account/App Key");
-//    }
-//
-//    if B2_APP_ID_TEST.is_match(&registration.b2_acc_id) {
-//        return Flash::error(Redirect::to("/register/"), "Invalid characters in Account/App ID");
-//    }
-//
-//    if B2_BUCKET_NAME_TEST.is_match(&registration.b2_bucket_name) {
-//        return Flash::error(Redirect::to("/register/"), "Invalid characters in Bucket Name");
-//    }
 
     diesel::insert_into(db_tables::Users::table)
         .values(&db_tables::DbUserIns {
@@ -661,5 +661,5 @@ fn main() {
                ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
                register_submit, add_more_repos, add_more_services, files, edit_repo, delete_repo, delete_service, account_management::edit_account,
                account_management::edit_account_no_login, account_management::change_username, account_management::change_email,
-               account_management::change_password, logout_no_login, edit_service]).launch();
+               account_management::change_password, logout_no_login, edit_service, preview_command]).launch();
 }

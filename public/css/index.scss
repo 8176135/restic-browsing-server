@@ -25,6 +25,15 @@
       border-bottom-left-radius: 0;
       border-top-left-radius: 0;
     }
+    .btn.preview {
+      &.no_radius {
+        border-radius: 0;
+      }
+      background-color: #303f9f;
+      &:hover {
+        background-color: #3f51b5;
+      }
+    }
     .btn.edit {
       &.no_radius {
         border-radius: 0;
@@ -85,6 +94,7 @@ i::selection, label::selection {
 .select-wrapper .caret {
   fill: white !important;
 }
+
 .tabs {
   grid-area: tabs;
   justify-self: center;
@@ -105,7 +115,6 @@ i::selection, label::selection {
 .center {
   margin: auto;
 }
-
 
 .edit_account {
   grid-area: lHeader;

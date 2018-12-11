@@ -165,6 +165,7 @@ pub fn decrypt(cipher_txt: &str, key: &str) -> String {
 
 pub fn restic(env_vars: &std::collections::HashMap<String, String>, service_type: &str, link: &str, path: &str, pass: &str) -> Command {
     let mut b2_command = std::process::Command::new("restic");
+
     b2_command.env("RESTIC_PASSWORD", pass)
         .envs(env_vars)
         .arg("-r").arg(format!("{}:{}{}", service_type, link, path));

@@ -78,7 +78,6 @@ function download() {
     getChildCheckbox($("#list").children("li").children("label").children("input"), files_to_download);
 
     if (files_to_download.length === 0) {
-
         return;
     }
 

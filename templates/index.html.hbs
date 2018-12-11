@@ -24,7 +24,8 @@
             <h4>Edit repo: {{name}}</h4>
             <div class="line">
                 <div class="input-field">
-                    <input type="text" id="{{name}}_new_name" class="repo_name_input white-text" name="edit_repo_name" onblur="repo_name_check(this)" maxlength="63" value="{{name}}" autocomplete="off" required>
+                    <input type="text" id="{{name}}_new_name" class="repo_name_input white-text" name="edit_repo_name" onblur="repo_name_check(this)" maxlength="63"
+                           value="{{name}}" autocomplete="off" required>
                     <label for="{{name}}_new_name">New Repository Name</label>
                 </div>
             </div>
@@ -37,9 +38,8 @@
                 </select>
                 <div class="input-field" style="flex: 10 0 auto;">
                     <input type="text" id="{{name}}_new_path" class="repo_path_input white-text" name="edit_repo_path" maxlength="255" value="{{path}}" required>
-                    <label for="{{name}}_new_path">New Repository Path  (Appended to service path)</label>
+                    <label for="{{name}}_new_path">New Repository Path (Appended to service path)</label>
                 </div>
-
             </div>
             <div class="input-field">
                 <input type="password" id="{{name}}_new_password" class="repo_password_input white-text" name="edit_repo_password" placeholder="[Same Password]"
@@ -79,12 +79,23 @@
     </div>
 </form>
 
+<div class="modal grey darken-3" id="preview_modal">
+    <div class="modal-content">
+        <h4>Repository List Command Preview for [<span class="repo_name"></span>]</h4>
+        <code>Loading...</code>
+    </div>
+    <div class="modal-footer grey darken-1">
+        <button class="modal-close waves-effect waves-dark btn btn-flat white-text" type="button">Close</button>
+    </div>
+</div>
+
 {{#each services}}
     <form id="edit_service_{{name}}_modal" class="modal grey darken-3" method="post" action="edit/service/{{url_encode name}}">
         <div class="modal-content">
             <h4>Edit Service: {{name}}</h4>
             <div class="input-field">
-                <input type="text" id="{{name}}_new_name" class="service_name_input white-text validate" name="new_service_name" value="{{name}}" onblur="service_name_check(this)" maxlength="63" required>
+                <input type="text" id="{{name}}_new_name" class="service_name_input white-text validate" name="new_service_name" value="{{name}}"
+                       onblur="service_name_check(this)" maxlength="63" required>
                 <label for="{{name}}_new_name">New Service Name</label>
             </div>
             <div class="line">
@@ -141,14 +152,16 @@
         {{#each configs}}
             <li class="collection-item grey darken-4">
                 <div class="line">
-                    <a href="bucket/{{url_encode name}}/" style="flex: 1 0 auto;">
+                    <a href="bucket/{{url_encode name}}" style="flex: 1 0 auto;">
                         <button class="btn btn-flat waves-effect waves-dark white-text repo_name">{{name}}</button>
                     </a>
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn no_radius modal-trigger preview" data-target="preview_modal" data-repo_link="{{url_encode name}}">
+                        Preview
+                    </button>
                     <button class="btn btn-flat waves-effect waves-dark white-text edge_btn edit no_radius modal-trigger" data-target="edit_repo_{{name}}_modal">
                         <i class="material-icons">edit</i>
                     </button>
-                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn delete modal-trigger" data-target="delete_config_confirm_modal"
-                            data-delete_name="{{url_encode name}}">
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn delete modal-trigger" data-target="delete_config_confirm_modal" data-delete_name="{{url_encode name}}">
                         <i class="material-icons">delete</i>
                     </button>
                 </div>

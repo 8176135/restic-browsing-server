@@ -85,6 +85,31 @@ $(document).ready(function () {
         delete_config_confirm_modal.find(".repo_name").text(decodeURIComponent(delete_url.replace(/\+/g, ' ')));
         delete_config_confirm_modal.attr("action", "/delete/repo/" + delete_url)
     });
+
+    const preview_modal = $("#preview_modal");
+    const pm_repo_name = preview_modal.find(".repo_name");
+    const pm_code = preview_modal.find("code");
+
+    preview_modal.find(".modal-close").click((ev) => {
+        pm_code.text("Loading...");
+        pm_repo_name.text("");
+    });
+
+    $(".preview.btn").click((ev) => {
+        pm_repo_name.text(decodeURIComponent($(ev.target).attr("data-repo_link")));
+        $.ajax({
+            type: "POST",
+            url: "/preview/" + $(ev.target).attr("data-repo_link"),
+            success: function (msg, textStatus, jqXHR) {
+                console.log(msg);
+                pm_code.text(msg);
+            },
+            error: function (jqXHR, textErr, err) {
+                console.log(textErr);
+                console.log(err);
+            }
+        });
+    });
 });
 
 function service_name_check(self) {
