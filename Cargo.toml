@@ -16,6 +16,7 @@ base64 = "*"
 ring = "*"
 regex = "*"
 urlencoding = "*"
+dirs = "*"
 #serde_json = "*"
 
 [dependencies.rocket_contrib]

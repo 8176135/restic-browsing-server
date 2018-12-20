@@ -168,7 +168,8 @@ pub fn restic(env_vars: &std::collections::HashMap<String, String>, service_type
 
     b2_command.env("RESTIC_PASSWORD", pass)
         .envs(env_vars)
-        .arg("-r").arg(format!("{}:{}{}", service_type, link, path));
+        .arg("-r").arg(format!("{}:{}{}", service_type, link, path))
+        .arg("--no-cache");
     b2_command
 }
 

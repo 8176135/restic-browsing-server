@@ -111,7 +111,7 @@ pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Fl
             .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass))
             .load::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db").first().unwrap().clone();
     if helper::verify_user(&login_candidate, &new_password.old_password) {
-        let insert_result = diesel::update(Users::dsl::Users.filter(Users::id.eq(user.id)))
+        let _insert_result = diesel::update(Users::dsl::Users.filter(Users::id.eq(user.id)))
             .set((Users::password.eq(&password),
                   Users::salt.eq(&salt),
                   Users::enced_enc_pass.eq(helper::encrypt_base64(&user.encryption_password, &new_password.password, &salt))))

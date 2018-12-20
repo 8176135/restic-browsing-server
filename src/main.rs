@@ -15,6 +15,7 @@ extern crate serde;
 extern crate lazy_static;
 
 extern crate regex;
+extern crate dirs;
 
 mod helper;
 mod db_tables;
@@ -126,9 +127,11 @@ pub struct User {
 }
 
 const TEMP_STORAGE_PATH: &str = "temp_download/";
+//const RESTIC_CACHE_PATH: &str = ".cache/restic/";
 
 lazy_static! {
     static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<String>>> = Mutex::new(HashMap::new());
+    static ref CACHE_GUARD: Mutex<()> = Mutex::new(());
     static ref B2_APP_KEY_TEST: Regex = Regex::new("[^\\w\\/+=-]").unwrap();
     static ref B2_APP_ID_TEST: Regex = Regex::new("[^\\da-fA-F]").unwrap();
     static ref B2_BUCKET_NAME_TEST: Regex = Regex::new("[^\\w-.\\/]").unwrap();
@@ -280,28 +283,28 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
 #[post("/preview/<repo_name>")]
 fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<String>> {
     if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
-            cmd.arg("ls")
-                .arg("-l")
-                .arg("latest");
-            Ok(format!("{:?}", cmd))
-        } else {
-            Err(NotFound("Repository doesn't exist".to_owned()))
-        }
+        cmd.arg("ls")
+            .arg("-l")
+            .arg("latest");
+        Ok(format!("{:?}", cmd))
+    } else {
+        Err(NotFound("Repository doesn't exist".to_owned()))
     }
+}
 
-    #[get("/bucket/<repo_name>")]
-    fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redirect>> {
-        use std::path::PathBuf;
+#[get("/bucket/<repo_name>")]
+fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redirect>> {
+    use std::path::PathBuf;
 
-        #[derive(Serialize)]
-        struct BucketsData {
-            repo_name: String,
-            status_msg: String,
-            files: String,
-        }
-        if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
-            let out = cmd.arg("ls")
-                .arg("-l")
+    #[derive(Serialize)]
+    struct BucketsData {
+        repo_name: String,
+        status_msg: String,
+        files: String,
+    }
+    if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
+        let out = cmd.arg("ls")
+            .arg("-l")
             .arg("latest")
             .output().unwrap();
 
@@ -317,8 +320,14 @@ fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<Str
                 Redirect::to("/"),
                 "Repository password is incorrect"));
         }
+        std::fs::write("TEST", &out.stdout).expect("WRITING PROBLEM");
         let mut all_files: Vec<String> = String::from_utf8_lossy(&out.stdout)
-            .lines().skip(1).map(|c| {
+            .lines().skip(1).filter_map(|c| {
+            match c.chars().next().unwrap_or('s') {
+                '-' => (),
+                'd' => (),
+                _ => return None,
+            }
             let mut path_started = false;
             let mut folder_path = String::new();
             for item in c.split(" ") {
@@ -333,7 +342,7 @@ fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<Str
             if c.chars().next().expect("suddenly no next character,") == 'd' {
                 folder_path.push('/');
             }
-            folder_path.trim().to_owned()
+            Some(folder_path.trim().to_owned())
         }).collect();
 
         let mut final_html = String::new();
@@ -355,6 +364,7 @@ fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<Str
                     }
                     cur_folder.pop();
                 }
+                //println!("Path: {}", path_str);
                 if path_str.ends_with('/') {
                     path.strip_prefix(&cur_folder).unwrap().components().for_each(|c| {
                         final_html.push_str(
@@ -373,6 +383,18 @@ fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<Str
                 final_html.push_str("</ul></li>");
             }
         }
+
+//        std::thread::spawn(move || {
+//            let mut cache_dir = dirs::cache_dir().expect("Can't get cache dir");
+//            cache_dir.push("restic/");
+//
+//            for item in std::fs::read_dir(&cache_dir).expect("Failed to read cache dir") {
+//                let item = item.expect("Failed to read cache dir entry");
+//                if !item.path().is_dir() { continue; }
+//                if std::time::SystemTime::now().duration_since(
+//                    item.metadata().expect("Cache metadata retrieval failed").modified().unwrap()).unwrap() > std::time::Duration::from_secs(24 * 60 * 60) {}
+//            }
+//        });
 
         let mut guard = PATH_CACHE.lock().unwrap();
         guard.insert((user.id as i16, repo_name.clone()), all_files);
@@ -393,14 +415,14 @@ fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<Str
 #[post("/bucket/<repo_name>/download", data = "<file_paths>")]
 fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) -> Result<Vec<u8>, NotFound<String>> {
     use std::fs;
+    let download_path = format!("{}{}/", TEMP_STORAGE_PATH, user.id);
+    fs::create_dir(&download_path).is_ok();
     let guard = PATH_CACHE.lock().unwrap();
     if let Some(all_paths) = guard.get(&(user.id as i16, repo_name.clone())) {
         let file_paths: Vec<usize> = file_paths.into_inner();
 
         if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
-            helper::delete_dir_contents(fs::read_dir(TEMP_STORAGE_PATH));
-
-            cmd.arg("restore").arg("latest").arg(&format!("--target={}", TEMP_STORAGE_PATH));
+            cmd.arg("restore").arg("latest").arg(&format!("--target={}", &download_path));
             for path_idx in file_paths {
                 let path = &all_paths[path_idx];
                 cmd.arg("--include=".to_owned() + path);
@@ -408,8 +430,9 @@ fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) ->
 
             println!("{}", String::from_utf8_lossy(&cmd.output().unwrap().stderr));
             let mut data_to_send = std::io::Cursor::new(Vec::<u8>::new());
-            helper::zip_dir(TEMP_STORAGE_PATH, &mut data_to_send);
-
+            helper::zip_dir(&download_path, &mut data_to_send);
+            std::fs::remove_dir_all(&download_path).expect("Failed to delete files");
+            //helper::delete_dir_contents(fs::read_dir(&download_path));
             Ok(data_to_send.into_inner())
         } else {
             Err(NotFound("No bucket by this number".to_owned()))
