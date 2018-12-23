@@ -6,6 +6,7 @@ table! {
         password -> Text,
         salt -> Text,
         enced_enc_pass -> Text,
+        kilobytes_downloaded -> Integer,
     }
 }
 

@@ -168,8 +168,8 @@ pub fn restic(env_vars: &std::collections::HashMap<String, String>, service_type
 
     b2_command.env("RESTIC_PASSWORD", pass)
         .envs(env_vars)
-        .arg("-r").arg(format!("{}:{}{}", service_type, link, path))
-        .arg("--no-cache");
+        .arg("-r").arg(format!("{}:{}{}", service_type, link, path));
+//        .arg("--no-cache");
     b2_command
 }
 
@@ -216,6 +216,15 @@ pub fn restic_db(repo_name: &str, user: &::User) -> Result<Command, ()> {
         &decrypt(&first.enc_addr_part, &user.encryption_password),
         &first.path,
         &decrypt(&first.encryption_password, &user.encryption_password)))
+}
+
+pub fn get_used_kilos(con: &diesel::MysqlConnection, user_id: i32) -> i32 {
+    use db_tables::Users;
+
+    Users::table
+        .select(Users::kilobytes_downloaded)
+        .filter(Users::id.eq(user_id))
+        .first::<i32>(con).expect("Failed to load used kilobytes")
 }
 
 pub fn get_random_stuff(length: usize) -> String {

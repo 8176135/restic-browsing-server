@@ -110,6 +110,8 @@ $(document).ready(function () {
             }
         });
     });
+
+    $(".data_use").find(".progress > .determinate").css("width", used_kilobytes * 100 / total_kilobytes + "%");
 });
 
 function service_name_check(self) {

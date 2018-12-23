@@ -42,9 +42,21 @@
         <i class="material-icons right">exit_to_app</i></button>
 </form>
 
-<div class="footer"></div>
+<div class="footer">
+    <div class="data_use">Data used: {{shared_data.used_kilobytes}}
+        <div class="progress">
+            <div class="determinate"></div>
+        </div>
+        of {{shared_data.total_kilobytes}} KB
+    </div>
+</div>
 
-<script>const repo_name = "{{repo_name}}";</script>
+<script>
+    const repo_name = "{{repo_name}}";
+    // + 0 to stop IDE from complaining
+    const used_kilobytes = {{shared_data.used_kilobytes}}+0;
+    const total_kilobytes = {{shared_data.total_kilobytes}}+0;
+</script>
 <script src="/public/js/bucket_items.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" defer></script>

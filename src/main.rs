@@ -24,13 +24,14 @@ mod account_management;
 
 use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
-use rocket::http::{Cookie, Cookies};
+use rocket::http::{Cookie, Cookies, Status};
 use rocket::request::{FromForm, FormItems};
 
 use rocket_contrib::{templates::Template, json::Json};
 
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::sync::RwLock;
 
 use diesel::prelude::*;
 use rocket::response::NamedFile;
@@ -119,6 +120,11 @@ struct EditRepoForm {
     owning_service: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct SharedPageData {
+    used_kilobytes: i32,
+    total_kilobytes: i32,
+}
 
 #[derive(Debug)]
 pub struct User {
@@ -127,11 +133,12 @@ pub struct User {
 }
 
 const TEMP_STORAGE_PATH: &str = "temp_download/";
+const SIZE_CAP_KILOBYTES: i32 = 100 * 1000;
 //const RESTIC_CACHE_PATH: &str = ".cache/restic/";
 
 lazy_static! {
-    static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<String>>> = Mutex::new(HashMap::new());
-    static ref CACHE_GUARD: Mutex<()> = Mutex::new(());
+    static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<(String,i64)>>> = Mutex::new(HashMap::new());
+    static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
     static ref B2_APP_KEY_TEST: Regex = Regex::new("[^\\w\\/+=-]").unwrap();
     static ref B2_APP_ID_TEST: Regex = Regex::new("[^\\da-fA-F]").unwrap();
     static ref B2_BUCKET_NAME_TEST: Regex = Regex::new("[^\\w-.\\/]").unwrap();
@@ -201,7 +208,7 @@ fn already_logged_in(_user: User) -> Redirect {
 
 #[get("/")]
 fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
-    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList};
+    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList, Users};
 
     #[derive(Serialize, Queryable)]
     struct ConInfoData {
@@ -227,12 +234,15 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         env_names: Vec<db_tables::DbEnvNames>,
         service_type: Vec<db_tables::DbServiceType>,
         services: Vec<ServiceData>,
+        shared_data: SharedPageData,
     }
 
     let (flash, status) = match flash {
         None => (None, None),
         Some(c) => (Some(c.msg().to_owned()), Some(c.name().to_owned()))
     };
+
+    let con = helper::est_db_con();
 
     let mut item = Item {
         id: user.id,
@@ -243,13 +253,16 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         flash,
         status,
         services: Vec::new(),
+        shared_data: SharedPageData {
+            used_kilobytes: helper::get_used_kilos(&con, user.id),
+            total_kilobytes: SIZE_CAP_KILOBYTES
+        }
     };
-
-    let con = helper::est_db_con();
 
     item.configs = ConnectionInfo::dsl::ConnectionInfo.inner_join(Services::table)
         .select((ConnectionInfo::name, ConnectionInfo::path, Services::service_name))
         .filter(ConnectionInfo::owning_user.eq(user.id))
+        .order_by(ConnectionInfo::name.asc())
         .load::<ConInfoData>(&con).expect("Folder name query not going through");
 
     item.service_type = ServiceType::dsl::ServiceType
@@ -262,6 +275,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         let temp: Vec<DbBasesList> = BasesList::dsl::BasesList
             .select((BasesList::service_name, BasesList::env_name_ids, BasesList::service_type))
             .filter(BasesList::owning_user.eq(user.id))
+            .order_by(BasesList::service_name.asc())
             .load::<DbBasesList>(&con).expect("Bases List query working");
 
         temp.into_iter().map(|c| {
@@ -272,6 +286,9 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
             }
         }).collect()
     };
+
+
+
     Template::render("index", &item)
 }
 
@@ -301,6 +318,7 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
         repo_name: String,
         status_msg: String,
         files: String,
+        shared_data: SharedPageData,
     }
     if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
         let out = cmd.arg("ls")
@@ -321,40 +339,47 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
                 "Repository password is incorrect"));
         }
         std::fs::write("TEST", &out.stdout).expect("WRITING PROBLEM");
-        let mut all_files: Vec<String> = String::from_utf8_lossy(&out.stdout)
+        let mut all_files: Vec<(String, i64)> = String::from_utf8_lossy(&out.stdout)
             .lines().skip(1).filter_map(|c| {
             match c.chars().next().unwrap_or('s') {
                 '-' => (),
                 'd' => (),
                 _ => return None,
             }
-            let mut path_started = false;
+            let size_in_bytes: i64;
             let mut folder_path = String::new();
-            for item in c.split(" ") {
-                if path_started || item.chars().next().unwrap_or('-') == '/' {
-                    if path_started {
-                        folder_path.push(' ');
+            {
+                let mut pieces = c.split_whitespace();
+                size_in_bytes = pieces.nth(3).unwrap().parse().expect("Size is not number");
+
+                let mut path_started = false;
+                for item in pieces {
+                    if path_started || item.chars().next().unwrap_or('-') == '/' {
+                        if path_started {
+                            folder_path.push(' ');
+                        }
+                        path_started = true;
+                        folder_path.push_str(item);
                     }
-                    path_started = true;
-                    folder_path.push_str(item);
                 }
             }
+
             if c.chars().next().expect("suddenly no next character,") == 'd' {
                 folder_path.push('/');
             }
-            Some(folder_path.trim().to_owned())
+            Some((folder_path.trim().to_owned(), size_in_bytes))
         }).collect();
 
         let mut final_html = String::new();
         {
-            let first_item = all_files.first().expect("No files in backup");
+            let first_item = &all_files.first().expect("No files in backup").0;
             let mut cur_folder = PathBuf::from(first_item);
             if !cur_folder.is_dir() {
                 cur_folder.pop();
             }
             let mut counter = 0;
 
-            for (idx, path_str) in all_files.iter().enumerate() {
+            for (idx, (path_str, path_size)) in all_files.iter().enumerate() {
                 let path = PathBuf::from(path_str);
 
                 while counter != 0 && !path.starts_with(&cur_folder) {
@@ -375,8 +400,8 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
                     cur_folder = path;
                 } else {
                     final_html.push_str(
-                        &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span></label></li>",
-                                 idx, path.file_name().expect("No file name").to_str().unwrap()));
+                        &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span><span class=\"file-size\">{:.1} KB</span></label></li>",
+                                 idx, path.file_name().expect("No file name").to_str().unwrap(), *path_size as f32 * 0.001f32));
                 }
             }
             for _ in 0..counter {
@@ -404,6 +429,10 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
                                 repo_name: repo_name.to_owned(),
                                 status_msg: String::new(),
                                 files: final_html,
+                                shared_data: SharedPageData {
+                                    used_kilobytes: helper::get_used_kilos(&helper::est_db_con(), user.id),
+                                    total_kilobytes: SIZE_CAP_KILOBYTES,
+                                }
                             }))
     } else {
         Err(Flash::error(
@@ -413,33 +442,61 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
 }
 
 #[post("/bucket/<repo_name>/download", data = "<file_paths>")]
-fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) -> Result<Vec<u8>, NotFound<String>> {
+fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) -> Result<Vec<u8>, Status> {
     use std::fs;
+    use db_tables::Users;
+    let con = helper::est_db_con();
+    let kilos_remaining = SIZE_CAP_KILOBYTES - helper::get_used_kilos(&con, user.id);
+
+    {
+        let mut down_guard = DOWNLOAD_IN_USE.lock().expect("Failed to lock download guard, another thread panic?");
+        if *down_guard.get(&user.id).unwrap_or(&false) {
+            return Err(Status::NotAcceptable);
+        }
+        down_guard.insert(user.id, true);
+    }
+
     let download_path = format!("{}{}/", TEMP_STORAGE_PATH, user.id);
     fs::create_dir(&download_path).is_ok();
     let guard = PATH_CACHE.lock().unwrap();
-    if let Some(all_paths) = guard.get(&(user.id as i16, repo_name.clone())) {
+    let mut cmd = if let Some(all_paths) = guard.get(&(user.id as i16, repo_name.clone())) {
         let file_paths: Vec<usize> = file_paths.into_inner();
 
         if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", &download_path));
-            for path_idx in file_paths {
-                let path = &all_paths[path_idx];
+            let total = file_paths.iter().fold(0i64, |prev ,path_idx| {
+                let (path, size) = &all_paths[*path_idx];
                 cmd.arg("--include=".to_owned() + path);
+                prev + size
+            });
+            if total / 1000 < kilos_remaining as i64 {
+                diesel::update(Users::table.filter(Users::id.eq(user.id)))
+                    .set(Users::kilobytes_downloaded.eq(SIZE_CAP_KILOBYTES - kilos_remaining + (total / 1000) as i32))
+                             .execute(&con).expect("Failed to update kilobyte remaining");
+                Ok(cmd)
+            } else {
+                Err(Status::FailedDependency)
             }
 
-            println!("{}", String::from_utf8_lossy(&cmd.output().unwrap().stderr));
-            let mut data_to_send = std::io::Cursor::new(Vec::<u8>::new());
-            helper::zip_dir(&download_path, &mut data_to_send);
-            std::fs::remove_dir_all(&download_path).expect("Failed to delete files");
-            //helper::delete_dir_contents(fs::read_dir(&download_path));
-            Ok(data_to_send.into_inner())
         } else {
-            Err(NotFound("No bucket by this number".to_owned()))
+            Err(Status::NotFound)
         }
     } else {
-        Err(NotFound("Woop".to_owned()))
-    }
+        Err(Status::NotFound)
+    }?;
+    drop(guard);
+
+    println!("{}", String::from_utf8_lossy(&cmd.output().unwrap().stderr));
+
+    let mut data_to_send = std::io::Cursor::new(Vec::<u8>::new());
+    helper::zip_dir(&download_path, &mut data_to_send);
+    let inner = data_to_send.into_inner();
+
+    std::fs::remove_dir_all(&download_path).expect("Failed to delete files");
+
+    DOWNLOAD_IN_USE.lock().expect("Failed to lock download guard, another thread panic?").insert(user.id, false);
+
+    Ok(inner)
 }
 
 #[post("/logout")]
@@ -518,7 +575,7 @@ fn delete_repo(user: User, repo_name: String) -> Flash<Redirect> {
 
 #[post("/add/repo", data = "<name>")]
 fn add_more_repos(user: User, name: Form<AddNewRepoForm>) -> Flash<Redirect> {
-    use db_tables::{Services, update_repositories};
+    use db_tables::{update_repositories};
 
     if name.new_repo_name.trim().is_empty() {
         return Flash::error(Redirect::to("/"), "Error: repo name can not be empty");
@@ -528,27 +585,7 @@ fn add_more_repos(user: User, name: Form<AddNewRepoForm>) -> Flash<Redirect> {
     println!("{}", name.owning_service);
     diesel::select(update_repositories(&name.owning_service, user.id, &name.new_repo_name, &name.new_repo_name, &name.new_repo_path, helper::encrypt(&name.new_repo_password, &user.encryption_password)))
         .execute(&con).unwrap();
-//    let service_id = Services::dsl::Services.select(Services::id)
-//        .filter(Services::service_name.eq(&name.owning_service))
-//        .filter(Services::owning_user.eq(user.id))
-//        .first::<i32>(&con)
-//        .expect("Failed to get service id from service name");
-//
-//    let insert_result = diesel::insert_into(db_tables::ConnectionInfo::table)
-//        .values(&db_tables::ConnectionInfoIns {
-//            owning_user: user.id,
-//            name: name.new_repo_name.clone(),
-//            encryption_password: helper::encrypt(&name.new_repo_password, &user.encryption_password),
-//            service_used: service_id,
-//        }).execute(&con);
-//
-//    use helper::IsUnique::*;
-//    match helper::check_for_unique_error(insert_result).expect("Failed to add new repository") {
-//        Unique(_) => Flash::success(Redirect::to("/"), "Successfully added new repository"),
-//        NonUnique => {
-//            Flash::error(Redirect::to("/"), "New repository name already exists.")
-//        }
-//    }
+
     Flash::success(Redirect::to("/"), "Successfully added new repository")
 }
 

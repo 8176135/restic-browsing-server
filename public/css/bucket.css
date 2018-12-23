@@ -15,4 +15,9 @@
   grid-column: 3;
 }
 
+span.file-size {
+  margin-left: 30px;
+  font-weight: bold;
+}
+
 /*# sourceMappingURL=bucket.css.map */

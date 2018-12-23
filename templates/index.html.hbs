@@ -155,13 +155,15 @@
                     <a href="bucket/{{url_encode name}}" style="flex: 1 0 auto;">
                         <button class="btn btn-flat waves-effect waves-dark white-text repo_name">{{name}}</button>
                     </a>
-                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn no_radius modal-trigger preview" data-target="preview_modal" data-repo_link="{{url_encode name}}">
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn no_radius modal-trigger preview" data-target="preview_modal"
+                            data-repo_link="{{url_encode name}}">
                         Preview
                     </button>
                     <button class="btn btn-flat waves-effect waves-dark white-text edge_btn edit no_radius modal-trigger" data-target="edit_repo_{{name}}_modal">
                         <i class="material-icons">edit</i>
                     </button>
-                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn delete modal-trigger" data-target="delete_config_confirm_modal" data-delete_name="{{url_encode name}}">
+                    <button class="btn btn-flat waves-effect waves-dark white-text edge_btn delete modal-trigger" data-target="delete_config_confirm_modal"
+                            data-delete_name="{{url_encode name}}">
                         <i class="material-icons">delete</i>
                     </button>
                 </div>
@@ -302,7 +304,15 @@
     {{/each}}
 </select>
 
-<div class="footer"></div>
+<div class="footer">
+
+    <div class="data_use">Data used: {{shared_data.used_kilobytes}}
+        <div class="progress">
+            <div class="determinate"></div>
+        </div>
+         of {{shared_data.total_kilobytes}} KB
+    </div>
+</div>
 <script>
     const service_names = new Set();
         {{#each services}}
@@ -312,6 +322,9 @@
         {{#each configs}}
         service_names.add("{{name}}");
         {{/each}}
+
+    const used_kilobytes = {{shared_data.used_kilobytes}}+0;
+    const total_kilobytes = {{shared_data.total_kilobytes}}+0;
 </script>
 <script src="/public/js/index.js"></script>
 </body>

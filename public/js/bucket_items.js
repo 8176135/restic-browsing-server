@@ -13,6 +13,8 @@ list.on("change", "input",
         }
     });
 
+$(".data_use").find(".progress > .determinate").css("width", used_kilobytes * 100 / total_kilobytes + "%");
+
 function checkAllChildren(checkbox, isChecked) {
     checkbox.parent().siblings("ul").find("input").prop("checked", isChecked).prop("indeterminate", false);
 }

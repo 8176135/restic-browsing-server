@@ -8,8 +8,8 @@ body {
     height: 100vh;
 
   display: grid;
-  grid-template-columns: 10% 1fr 3fr 1fr 10%;
-  grid-template-rows: 175px max-content max-content auto min-content 150px;
+  grid-template-columns: 5% 1fr 3fr 1fr 5%;
+  grid-template-rows: 17.5% max-content max-content auto min-content 150px;
   grid-template-areas:  ". lHeader header rHeader ."
                         ". tabs tabs tabs ."
                         ". content content content ."
@@ -86,4 +86,19 @@ label {
   &.success {
     background-color: #1b5e20;
   }
+
+  .input-field, .select-dropdown {
+    //margin-top: 0;
+    margin-bottom: 0 !important;
+  }
+}
+.btn {
+  //overflow: visible;
+  white-space: nowrap;
+}
+
+.footer .data_use {
+  margin: auto;
+  text-align: center;
+  width: 75%;
 }
