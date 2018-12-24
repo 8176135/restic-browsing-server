@@ -9,26 +9,9 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Fixed a few bugs">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Download guard, sorting repos... bunch of other stuff.">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/bucket.css" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/bucket.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/bucket.css.map" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/bucket.css.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/bucket.scss" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/bucket.scss" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/login.css" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/login.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/login.css.map" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/login.css.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/login.scss" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/login.scss" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/main.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/main.css.map" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/main.css.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/css/main.scss" beforeDir="false" afterPath="$PROJECT_DIR$/public/css/main.scss" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/js/bucket_items.js" beforeDir="false" afterPath="$PROJECT_DIR$/public/js/bucket_items.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/public/js/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/public/js/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/db_tables.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/db_tables.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/helper.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/helper.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/bucket.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/bucket.html.hbs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/index.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html.hbs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/login.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/login.html.hbs" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -68,27 +51,14 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-8542">
-              <caret line="263" column="56" selection-start-line="263" selection-start-column="56" selection-end-line="263" selection-end-column="56" />
+            <state relative-caret-position="546">
+              <caret line="164" column="5" lean-forward="true" selection-start-line="164" selection-start-column="5" selection-end-line="164" selection-end-column="5" />
               <folding>
                 <element signature="e#1378#3044#0" />
-                <element signature="e#18225#18226#0" expanded="true" />
-                <element signature="e#18255#18256#0" expanded="true" />
-                <element signature="e#18304#18305#0" expanded="true" />
-                <element signature="e#18341#18342#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/account_management.rs">
-          <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret line="15" column="10" selection-start-line="15" selection-start-column="10" selection-end-line="15" selection-end-column="10" />
             </state>
           </provider>
         </entry>
@@ -105,7 +75,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/templates/bucket.html.hbs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1086">
+            <state relative-caret-position="1176">
               <caret line="56" selection-start-line="56" selection-end-line="57" selection-end-column="62" />
             </state>
           </provider>
@@ -115,7 +85,7 @@
         <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
           <provider selected="true" editor-type-id="text-editor">
             <state>
-              <caret column="8" lean-forward="true" selection-start-column="8" selection-end-column="8" />
+              <caret column="8" selection-start-column="8" selection-end-column="8" />
             </state>
           </provider>
         </entry>
@@ -123,7 +93,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="960">
+            <state relative-caret-position="6699">
               <caret line="319" column="17" selection-start-line="319" selection-start-column="17" selection-end-line="319" selection-end-column="17" />
             </state>
           </provider>
@@ -132,7 +102,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/js/index.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1236">
+            <state relative-caret-position="2289">
               <caret line="113" column="111" selection-start-line="113" selection-end-line="114" />
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
@@ -150,11 +120,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/public/js/bucket_items.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="551">
-              <caret line="121" column="30" lean-forward="true" selection-start-line="121" selection-start-column="30" selection-end-line="121" selection-end-column="30" />
+            <state relative-caret-position="1344">
+              <caret line="124" column="26" selection-start-line="124" selection-start-column="26" selection-end-line="124" selection-end-column="26" />
             </state>
           </provider>
         </entry>
@@ -221,7 +191,6 @@
         <option value="$PROJECT_DIR$/resources/user1.configs" />
         <option value="$PROJECT_DIR$/templates/signup.html" />
         <option value="$PROJECT_DIR$/rocket.toml" />
-        <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/public/jquery.bonsai.js" />
         <option value="$PROJECT_DIR$/public/css/bonsai.css" />
         <option value="$PROJECT_DIR$/public/js/bucketItems.js" />
@@ -253,6 +222,7 @@
         <option value="$PROJECT_DIR$/templates/index.html.hbs" />
         <option value="$PROJECT_DIR$/public/js/bucket_items.js" />
         <option value="$PROJECT_DIR$/src/main.rs" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -299,18 +269,6 @@
               <item name="duplicati_proxy" type="b2602c69:ProjectViewProjectNode" />
               <item name="duplicati_proxy" type="462c0819:PsiDirectoryNode" />
               <item name="public" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="duplicati_proxy" type="b2602c69:ProjectViewProjectNode" />
-              <item name="duplicati_proxy" type="462c0819:PsiDirectoryNode" />
-              <item name="public" type="462c0819:PsiDirectoryNode" />
-              <item name="css" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="duplicati_proxy" type="b2602c69:ProjectViewProjectNode" />
-              <item name="duplicati_proxy" type="462c0819:PsiDirectoryNode" />
-              <item name="public" type="462c0819:PsiDirectoryNode" />
-              <item name="js" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="duplicati_proxy" type="b2602c69:ProjectViewProjectNode" />
@@ -455,6 +413,7 @@
       <workItem from="1545355839964" duration="13730000" />
       <workItem from="1545396321471" duration="12795000" />
       <workItem from="1545516053392" duration="9569000" />
+      <workItem from="1545601089353" duration="6192000" />
     </task>
     <task id="LOCAL-00001" summary="Registration page frontend prototyped">
       <created>1536902229985</created>
@@ -596,17 +555,33 @@
       <option name="project" value="LOCAL" />
       <updated>1545274098093</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="Download guard, sorting repos... bunch of other stuff.">
+      <created>1545601266546</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1545601266546</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="599549000" />
+    <option name="totallyTimeSpent" value="605741000" />
+  </component>
+  <component name="TodoView">
+    <todo-panel id="selected-file">
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
+    <todo-panel id="all">
+      <are-packages-shown value="true" />
+      <is-autoscroll-to-source value="true" />
+    </todo-panel>
   </component>
   <component name="ToolWindowManager">
     <frame x="57" y="-5" width="2508" height="1450" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.11990212" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.12071778" />
       <window_info id="Structure" order="1" sideWeight="0.5022659" side_tool="true" weight="0.109298535" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -615,8 +590,8 @@
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Version Control" order="7" weight="0.25644916" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.32981133" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.25584906" />
       <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.5012235" side_tool="true" weight="0.24075472" />
       <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.49510604" weight="0.24075472" />
       <window_info anchor="bottom" id="Database Changes" order="10" show_stripe_button="false" />
@@ -674,12 +649,10 @@
     <MESSAGE value="Added repo path and name seperation" />
     <MESSAGE value="Added preview button and functionality." />
     <MESSAGE value="Fixed a few bugs" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed a few bugs" />
+    <MESSAGE value="Download guard, sorting repos... bunch of other stuff." />
+    <option name="LAST_COMMIT_MESSAGE" value="Download guard, sorting repos... bunch of other stuff." />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/public/css/bucket.css">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/public/js/jquery.bonsai.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="676">
@@ -840,6 +813,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/account_management.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="15" column="10" selection-start-line="15" selection-start-column="10" selection-end-line="15" selection-end-column="10" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/templates/login.html.hbs">
       <provider selected="true" editor-type-id="text-editor">
         <state>
@@ -849,60 +829,32 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/templates/bucket.html.hbs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1086">
+        <state relative-caret-position="1176">
           <caret line="56" selection-start-line="56" selection-end-line="57" selection-end-column="62" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/helper.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="981">
-          <caret line="225" column="34" selection-start-line="225" selection-start-column="34" selection-end-line="225" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/account_management.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret line="15" column="10" selection-start-line="15" selection-start-column="10" selection-end-line="15" selection-end-column="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-8542">
-          <caret line="263" column="56" selection-start-line="263" selection-start-column="56" selection-end-line="263" selection-end-column="56" />
-          <folding>
-            <element signature="e#1378#3044#0" />
-            <element signature="e#18225#18226#0" expanded="true" />
-            <element signature="e#18255#18256#0" expanded="true" />
-            <element signature="e#18304#18305#0" expanded="true" />
-            <element signature="e#18341#18342#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/public/js/index.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1236">
-          <caret line="113" column="111" selection-start-line="113" selection-end-line="114" />
-          <folding>
-            <element signature="e#0#29#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="960">
-          <caret line="319" column="17" selection-start-line="319" selection-start-column="17" selection-end-line="319" selection-end-column="17" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state>
-          <caret column="8" lean-forward="true" selection-start-column="8" selection-end-column="8" />
+          <caret column="8" selection-start-column="8" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6699">
+          <caret line="319" column="17" selection-start-line="319" selection-start-column="17" selection-end-line="319" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/public/js/index.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2289">
+          <caret line="113" column="111" selection-start-line="113" selection-end-line="114" />
+          <folding>
+            <element signature="e#0#29#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -915,8 +867,32 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/public/js/bucket_items.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="551">
-          <caret line="121" column="30" lean-forward="true" selection-start-line="121" selection-start-column="30" selection-end-line="121" selection-end-column="30" />
+        <state relative-caret-position="1344">
+          <caret line="124" column="26" selection-start-line="124" selection-start-column="26" selection-end-line="124" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/helper.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="981">
+          <caret line="225" column="34" selection-start-line="225" selection-start-column="34" selection-end-line="225" selection-end-column="34" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="105">
+          <caret line="5" column="11" lean-forward="true" selection-start-line="5" selection-start-column="11" selection-end-line="5" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="546">
+          <caret line="164" column="5" lean-forward="true" selection-start-line="164" selection-start-column="5" selection-end-line="164" selection-end-column="5" />
+          <folding>
+            <element signature="e#1378#3044#0" />
+          </folding>
         </state>
       </provider>
     </entry>
