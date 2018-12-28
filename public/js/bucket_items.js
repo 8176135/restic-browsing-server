@@ -93,7 +93,7 @@ function download() {
         xhrFields: {
             responseType: 'blob'
         },
-        url: window.location.pathname.substring(window.location.pathname.lastIndexOf('/') + 1) + "/download",
+        url: encodeURIComponent($("#repo_name").text()) + "/download",
         success: function (msg, textStatus, jqXHR) {
             console.log(msg);
             msg.type = 'application/zip';

@@ -6,8 +6,11 @@
 
 let counter = 0;
 
-function adding_options(target, selected_data) {
+function adding_options(target, selected_data, value) {
     counter++;
+    if (!value) {
+        value = "";
+    }
     let list_item = $(`<li class="collection-item line black"></li>`);
     let env_name_template = $("#env_name_template").clone();
     env_name_template.removeAttr("id");
@@ -15,11 +18,12 @@ function adding_options(target, selected_data) {
     list_item.append(env_name_template);
     list_item.append(`
                 <div class="input-field">
-                    <input type="text" name="env_value_list" id="env_value_${counter}" autocomplete="nope" maxlength="180" required>
+                    <input type="text" name="env_value_list" id="env_value_${counter}" autocomplete="nope" maxlength="180" required value="${value}">
                     <label for="env_value_${counter}">Env-var Value</label>
                 </div>`);
     let del_btn = $(`<button class="btn btn-flat waves-effect waves-dark white-text delete" type="button"><i class="material-icons">delete</i></button>`);
     del_btn.click((ev2) => {
+
         $(ev2.target).parents(".collection-item").remove();
     });
     list_item.append(del_btn);
@@ -38,8 +42,9 @@ $(".env_variable_list").each((idx, c) => {
     let temp = $(c).attr("data-preloaded");
     if (temp) {
         let array = temp.split(",");
+        let btn = $(c).find("button.add_var_btn").get(0);
         for (let i = 0; i < array.length; i++) {
-            adding_options($(c).find("button").get(0), array[i]);
+            adding_options(btn, array[i]);
         }
     }
 });
@@ -109,6 +114,29 @@ $(document).ready(function () {
                 console.log(err);
             }
         });
+    });
+
+    $(".btn.retrieve_details").click((ev) => {
+        $(ev.target).text("Loading...").prop("disabled", true);
+        $.ajax({
+            type: "POST",
+            url: "retrieve/service/" + encodeURIComponent($(ev.target).siblings("span.service_name").text()),
+            success: function (msg, textStatus, jqXHR) {
+                console.log(msg);
+                let parent = $(ev.target).closest(".modal-content");
+                parent.find("input[name=enc_addr_part]").val(msg.enc_addr_part);
+                parent.find(".delete.btn").click();
+                let btn = $(parent).find("button.add_var_btn").get(0);
+                for (let i = 0; i < msg.env_value_list.length; i++) {
+                    adding_options(btn, msg.env_var_names_list[i], msg.env_value_list[i]);
+                }
+                $(ev.target).hide();
+            },
+            error: function (jqXHR, textErr, err) {
+                console.log(textErr);
+                console.log(err);
+            }
+        })
     });
 
     $(".data_use").find(".progress > .determinate").css("width", used_kilobytes * 100 / total_kilobytes + "%");

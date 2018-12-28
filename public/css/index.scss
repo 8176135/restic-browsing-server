@@ -34,6 +34,10 @@
         background-color: #3f51b5;
       }
     }
+    .btn.full_width {
+      flex: 1 0 auto;
+
+    }
     .btn.edit {
       &.no_radius {
         border-radius: 0;
@@ -41,9 +45,6 @@
       border-bottom-right-radius: 0;
       border-top-right-radius: 0;
 
-      &.full_width {
-        flex: 1 0 auto;
-      }
       background-color: #f57c00;
       &:hover {
         background-color: #ff9800;

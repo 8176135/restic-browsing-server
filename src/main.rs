@@ -8,7 +8,6 @@ extern crate rocket_contrib;
 extern crate diesel;
 
 #[macro_use]
-extern crate serde_derive;
 extern crate serde;
 
 #[macro_use]
@@ -21,11 +20,12 @@ mod helper;
 mod db_tables;
 mod handlebar_helpers;
 mod account_management;
+mod repository_mods;
 
 use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
 use rocket::http::{Cookie, Cookies, Status};
-use rocket::request::{FromForm, FormItems};
+use rocket::request::{FormItems};
 
 use rocket_contrib::{templates::Template, json::Json};
 
@@ -33,6 +33,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::sync::RwLock;
 
+use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
 use rocket::response::NamedFile;
 
@@ -51,82 +52,20 @@ struct Registration {
     email: String,
 }
 
-#[derive(FromForm)]
-struct AddNewRepoForm {
-    new_repo_name: String,
-    new_repo_path: String,
-    new_repo_password: String,
-    owning_service: String,
-}
-
-#[derive(Debug)]
-struct AddNewServiceForm {
-    enc_addr_part: String,
-    env_value_list: Vec<String>,
-    env_var_names_list: Vec<i32>,
-    new_service_name: String,
-    service_type: i32,
-}
-
-impl<'f> FromForm<'f> for AddNewServiceForm {
-    // In practice, we'd use a more descriptive error type.
-    type Error = ();
-
-    fn from_form(items: &mut FormItems<'f>, strict: bool) -> Result<AddNewServiceForm, ()> {
-        let mut ans = AddNewServiceForm {
-            enc_addr_part: String::new(),
-            new_service_name: String::new(),
-            service_type: 0,
-            env_value_list: Vec::new(),
-            env_var_names_list: Vec::new(),
-        };
-
-        for item in items {
-            println!("{:?}", item);
-            match item.key.as_str() {
-                "enc_addr_part" => {
-                    let decoded = item.value.url_decode().map_err(|_| ())?;
-                    ans.enc_addr_part = decoded;
-                }
-                "new_service_name" => {
-                    let decoded = item.value.url_decode().map_err(|_| ())?;
-                    ans.new_service_name = decoded;
-                }
-                "service_type" => {
-                    let decoded = item.value.url_decode().map_err(|_| ())?;
-                    ans.service_type = decoded.parse().map_err(|_| ())?;
-                }
-                "env_value_list" => {
-                    let decoded = item.value.url_decode().map_err(|_| ())?;
-                    ans.env_value_list.push(decoded);
-                }
-                "env_var_names_list" => {
-                    let decoded = item.value.url_decode().map_err(|_| ())?;
-                    ans.env_var_names_list.push(decoded.parse().map_err(|_| ())?);
-                }
-                _ if strict => return Err(()),
-                _ => { /* allow extra value when not strict */ }
-            }
-        }
-        Ok(ans)
-    }
-}
-
-#[derive(FromForm)]
-struct EditRepoForm {
-    edit_repo_name: String,
-    edit_repo_path: String,
-    edit_repo_password: String,
-    owning_service: String,
-}
-
 #[derive(Debug, Serialize)]
 pub struct SharedPageData {
     used_kilobytes: i32,
     total_kilobytes: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+struct ServiceData {
+    enc_addr_part: String,
+    env_value_list: Vec<String>,
+    env_var_names_list: Vec<i32>,
+}
+
+#[derive(Debug, Clone)]
 pub struct User {
     pub id: i32,
     pub encryption_password: String,
@@ -255,8 +194,8 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         services: Vec::new(),
         shared_data: SharedPageData {
             used_kilobytes: helper::get_used_kilos(&con, user.id),
-            total_kilobytes: SIZE_CAP_KILOBYTES
-        }
+            total_kilobytes: SIZE_CAP_KILOBYTES,
+        },
     };
 
     item.configs = ConnectionInfo::dsl::ConnectionInfo.inner_join(Services::table)
@@ -286,7 +225,6 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
             }
         }).collect()
     };
-
 
 
     Template::render("index", &item)
@@ -432,7 +370,7 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
                                 shared_data: SharedPageData {
                                     used_kilobytes: helper::get_used_kilos(&helper::est_db_con(), user.id),
                                     total_kilobytes: SIZE_CAP_KILOBYTES,
-                                }
+                                },
                             }))
     } else {
         Err(Flash::error(
@@ -464,7 +402,7 @@ fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) ->
 
         if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", &download_path));
-            let total = file_paths.iter().fold(0i64, |prev ,path_idx| {
+            let total = file_paths.iter().fold(0i64, |prev, path_idx| {
                 let (path, size) = &all_paths[*path_idx];
                 cmd.arg("--include=".to_owned() + path);
                 prev + size
@@ -472,12 +410,11 @@ fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) ->
             if total / 1000 < kilos_remaining as i64 {
                 diesel::update(Users::table.filter(Users::id.eq(user.id)))
                     .set(Users::kilobytes_downloaded.eq(SIZE_CAP_KILOBYTES - kilos_remaining + (total / 1000) as i32))
-                             .execute(&con).expect("Failed to update kilobyte remaining");
+                    .execute(&con).expect("Failed to update kilobyte remaining");
                 Ok(cmd)
             } else {
                 Err(Status::FailedDependency)
             }
-
         } else {
             Err(Status::NotFound)
         }
@@ -540,169 +477,25 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     Flash::success(Redirect::to("/login/"), "Successfully Registered")
 }
 
-#[post("/edit/repo/<repo_name>", data = "<new_data>")]
-fn edit_repo(user: User, repo_name: String, new_data: Form<EditRepoForm>) -> Flash<Redirect> {
-    if repo_name.trim().is_empty() || new_data.edit_repo_name.trim().is_empty() {
-        return Flash::error(Redirect::to("/"), "Error: repo name can not be empty");
-    }
-    let con = helper::est_db_con();
-    let repo_pass = if new_data.edit_repo_password.is_empty() { None } else { Some(helper::encrypt(&new_data.edit_repo_password, &user.encryption_password)) };
-    diesel::select(db_tables::update_repositories(&new_data.owning_service, user.id, &new_data.edit_repo_name, &repo_name, &new_data.edit_repo_path, repo_pass))
-        .execute(&con).unwrap();
+#[post("/retrieve/service/<service_name>")]
+fn retrieve_service_data(user: User, service_name: String) -> Json<ServiceData> {
+    use db_tables::{BasesList, DbBasesListReturn};
+    // `line` is of type `Result<String, Error>`
 
-    Flash::success(Redirect::to("/"), format!("Successfully edited repository <{}>", new_data.edit_repo_name))
-}
+    let data: DbBasesListReturn = BasesList::table.select((BasesList::env_name_ids, BasesList::encrypted_env_values, BasesList::enc_addr_part))
+        .filter(BasesList::service_name.eq(service_name))
+        .filter(BasesList::owning_user.eq(user.id))
+        .first::<DbBasesListReturn>(&helper::est_db_con()).expect("Can't get bases list data");
 
-#[post("/delete/repo/<repo_name>")]
-fn delete_repo(user: User, repo_name: String) -> Flash<Redirect> {
-    use db_tables::ConnectionInfo::dsl::*;
-
-    let con = helper::est_db_con();
-
-    let num_deleted = diesel::delete(
-        ConnectionInfo
-            .filter(name.eq(&repo_name))
-            .filter(owning_user.eq(user.id)))
-        .execute(&con).expect("Error sending delete to database");
-
-    if num_deleted == 0 {
-        Flash::error(Redirect::to("/"),
-                     &format!("Failed to delete [{}] repository, doesn't seem to exist in the first place", repo_name))
-    } else {
-        Flash::success(Redirect::to("/"), &format!("Deleted [{}] Repository", repo_name))
-    }
-}
-
-#[post("/add/repo", data = "<name>")]
-fn add_more_repos(user: User, name: Form<AddNewRepoForm>) -> Flash<Redirect> {
-    use db_tables::{update_repositories};
-
-    if name.new_repo_name.trim().is_empty() {
-        return Flash::error(Redirect::to("/"), "Error: repo name can not be empty");
-    }
-
-    let con = helper::est_db_con();
-    println!("{}", name.owning_service);
-    diesel::select(update_repositories(&name.owning_service, user.id, &name.new_repo_name, &name.new_repo_name, &name.new_repo_path, helper::encrypt(&name.new_repo_password, &user.encryption_password)))
-        .execute(&con).unwrap();
-
-    Flash::success(Redirect::to("/"), "Successfully added new repository")
-}
-
-#[post("/add/service", data = "<name>")]
-fn add_more_services(user: User, name: Form<AddNewServiceForm>) -> Flash<Redirect> {
-//    println!("{:?}", name);
-    if name.new_service_name.trim().is_empty() {
-        return Flash::error(Redirect::to("/"), "Error: Service name can not be empty");
-    }
-    use db_tables::{Services, ServiceContents, ServicesIns, ServiceContentIns};
-    let con = helper::est_db_con();
-
-    let service_insert_result = diesel::insert_into(Services::table)
-        .values(ServicesIns {
-            owning_user: user.id,
-            service_name: name.new_service_name.clone(),
-            enc_addr_part: helper::encrypt(&name.enc_addr_part, &user.encryption_password),
-            service_type: name.service_type,
-        })
-        .execute(&con);
-
-    use helper::IsUnique::*;
-    match helper::check_for_unique_error(service_insert_result).expect("Failed to add new service") {
-        NonUnique => { return Flash::error(Redirect::to("/"), "New service name already exists."); }
-        _ => {}
-    }
-
-    let last_gen_id: i32 = diesel::select(db_tables::last_insert_id).first(&con).unwrap();
-//    println!("{}", last_gen_id);
-    let combined: Vec<ServiceContentIns> = name.env_value_list.iter().zip(name.env_var_names_list.iter())
-        .map(|c| ServiceContentIns {
-            env_name_id: c.1.to_owned(),
-            encrypted_env_value: helper::encrypt(c.0, &user.encryption_password).to_owned(),
-            owning_service: last_gen_id,
-        }).collect();
-
-    let contents_insert_result = diesel::insert_into(ServiceContents::table)
-        .values(&combined)
-        .execute(&con);
-
-    match helper::check_for_unique_error(contents_insert_result).expect("Failed to add new service") {
-        Unique(_) => Flash::success(Redirect::to("/"), "Successfully added new service"),
-        NonUnique => {
-            Flash::error(Redirect::to("/"), "New repository name already exists.")
-        }
-    }
-}
-
-#[post("/edit/service/<service_name>", data = "<new_data>")]
-fn edit_service(user: User, service_name: String, new_data: Form<AddNewServiceForm>) -> Flash<Redirect> {
-    println!("{:?}", new_data);
-    if new_data.new_service_name.trim().is_empty() {
-        return Flash::error(Redirect::to("/"), "Error: Service name can not be empty");
-    }
-    let con = helper::est_db_con();
-
-    use db_tables::{Services, ServiceContentIns, ServiceContents};
-
-    let service_id: i32 = Services::table.filter(Services::service_name.eq(&service_name)).filter(Services::owning_user.eq(user.id))
-        .select(Services::id)
-        .first::<i32>(&con).expect("Can't find existing service to edit");
-
-    let combined: Vec<ServiceContentIns> = new_data.env_value_list.iter().zip(new_data.env_var_names_list.iter())
-        .filter_map(|c| {
-            if c.0.is_empty() { None } else {
-                Some(ServiceContentIns {
-                    env_name_id: c.1.to_owned(),
-                    encrypted_env_value: helper::encrypt(c.0, &user.encryption_password).to_owned(),
-                    owning_service: service_id,
-                })
-            }
-        }).collect();
-
-    let to_set = (Services::service_name.eq(&new_data.new_service_name), Services::service_type.eq(new_data.service_type));
-    let updater =
-        diesel::update(Services::table.filter(Services::id.eq(service_id)));
-
-    if new_data.enc_addr_part.is_empty() {
-        updater.set(to_set)
-            .execute(&con).expect("Failed to update service without encrypted password");
-    } else {
-        updater.set((to_set.0, to_set.1, Services::enc_addr_part.eq(helper::encrypt(&new_data.enc_addr_part, &user.encryption_password))))
-            .execute(&con).expect("Failed to update service with encrypted password");
-    }
-
-    println!("{:?}", combined);
-
-    diesel::delete(ServiceContents::table
-        .filter(ServiceContents::owning_service.eq(service_id))
-        .filter(ServiceContents::env_name_id.ne_all(&new_data.env_var_names_list)))
-        .execute(&con).expect("Failed to delete non-present records");
-
-    diesel::replace_into(ServiceContents::table)
-        .values(combined)
-        .execute(&con)
-        .expect("Failed to replace stuff");
-
-    Flash::success(Redirect::to("/"), "Service Edited")
-}
-
-#[post("/delete/service/<service_name>")]
-fn delete_service(user: User, service_name: String) -> Flash<Redirect> {
-    use db_tables::Services;
-
-    let con = helper::est_db_con();
-
-    let num_deleted = diesel::delete(
-        Services::dsl::Services.filter(Services::service_name.eq(&service_name))
-            .filter(Services::owning_user.eq(user.id)))
-        .execute(&con).expect("Error sending delete to database");
-
-    if num_deleted == 0 {
-        Flash::error(Redirect::to("/"),
-                     &format!("Failed to delete [{}] service, doesn't seem to exist in the first place", service_name))
-    } else {
-        Flash::success(Redirect::to("/"), &format!("Deleted [{}] Service", service_name))
-    }
+    Json(ServiceData {
+        enc_addr_part: helper::decrypt(&data.enc_addr_part, &user.encryption_password),
+        env_value_list: data.encrypted_env_values.map_or(Vec::new(),
+                                                         |c|
+                                                             c.split(",")
+                                                                 .map(|c| helper::decrypt(c, &user.encryption_password))
+                                                                 .collect::<Vec<String>>()),
+        env_var_names_list: data.env_name_ids.map_or(Vec::new(), |c| c.split(",").map(|c| c.parse::<i32>().expect("env_name_id not numbers")).collect::<Vec<i32>>()),
+    })
 }
 
 #[get("/public/<file..>")]
@@ -719,7 +512,7 @@ fn main() {
         .mount("/",
                routes![index, logout, user_index, login_page, already_logged_in
                ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
-               register_submit, add_more_repos, add_more_services, files, edit_repo, delete_repo, delete_service, account_management::edit_account,
-               account_management::edit_account_no_login, account_management::change_username, account_management::change_email,
-               account_management::change_password, logout_no_login, edit_service, preview_command]).launch();
+               register_submit, repository_mods::add_more_repos, repository_mods::add_more_services, repository_mods::edit_service, repository_mods::edit_repo, repository_mods::delete_repo, repository_mods::delete_service, repository_mods::add_b2_preset,
+               account_management::edit_account, account_management::edit_account_no_login, account_management::change_username, account_management::change_email,
+               account_management::change_password, logout_no_login, files, preview_command,retrieve_service_data]).launch();
 }

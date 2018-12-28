@@ -89,10 +89,58 @@
     </div>
 </div>
 
+<form id="b2_preset_modal" class="modal grey darken-3" method="post" action="add/preset/b2">
+    <div class="modal-content">
+        <h4>New B2 Preset</h4>
+        <div class="input-field">
+            <input type="text" id="b2_new_name" class="service_name_input white-text validate" name="b2_new_name"
+                   onblur="repo_name_check(this)" maxlength="63" required>
+            <label for="b2_new_name">New Configuration Name</label>
+        </div>
+
+        <div class="line">
+            <div class="input-field">
+                <input type="text" name="b2_bucket_name" id="b2_bucket_name" autocomplete="off" required>
+                <label for="b2_bucket_name">Bucket Name</label>
+            </div>
+            <div style="flex: 0 0 20px;"></div>
+            <div class="input-field">
+                <input type="text" name="b2_repo_path" id="b2_repo_path" autocomplete="off" required>
+                <label for="b2_repo_path">Repository Root Path [ / for base ]</label>
+            </div>
+        </div>
+        <div class="line">
+            <div class="input-field">
+                <input type="password" name="b2_repo_password" id="b2_repo_password" minlength="25" autocomplete="off" required>
+                <label for="b2_repo_password">Repository Password</label>
+            </div>
+        </div>
+        <div class="line">
+            <div class="input-field">
+                <input type="text" name="b2_account_id" id="b2_account_id" minlength="15" autocomplete="off" required>
+                <label for="b2_account_id">Account ID</label>
+            </div>
+        </div>
+        <div class="line">
+            <div class="input-field">
+                <input type="text" name="b2_account_key" id="b2_account_key" minlength="25" autocomplete="off" required>
+                <label for="b2_account_key">Account Key</label>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer grey darken-1">
+        <button class="modal-close waves-effect waves-dark btn red darken-1" type="button">Close</button>
+        <button class="waves-effect waves-dark btn green darken-1 save_btn" type="submit">Add<i class="material-icons right">add</i></button>
+    </div>
+</form>
+
 {{#each services}}
     <form id="edit_service_{{name}}_modal" class="modal grey darken-3" method="post" action="edit/service/{{url_encode name}}">
         <div class="modal-content">
-            <h4>Edit Service: {{name}}</h4>
+
+            <h4>Edit Service: <span class="service_name">{{name}}</span>
+                <button class="btn right waves-effect waves-dark retrieve_details" type="button">Retrieve + Decrypt values</button>
+            </h4>
             <div class="input-field">
                 <input type="text" id="{{name}}_new_name" class="service_name_input white-text validate" name="new_service_name" value="{{name}}"
                        onblur="service_name_check(this)" maxlength="63" required>
@@ -100,7 +148,7 @@
             </div>
             <div class="line">
                 <code style="margin-right: 10px;" class="first_part">restic -r </code>
-                <select name="service_type" title="Service Type" style="width: 120px;" class="preselect" data-selected="{{service_selected}}">
+                <select name="service_type" title="Service Type" style="width: 120px;" class="preselect" data-selected="{{1}}">
                     <option value="-1" disabled>Same Service</option>
                     {{#each ../service_type}}
                         <option value="{{id}}">{{service_type}}</option>
@@ -145,7 +193,24 @@
 <ul class="tabs black">
     <li class="tab"><a href="#repo_list_content">Repository List</a></li>
     <li class="tab"><a href="#service_list_content">Services</a></li>
+    <li class="tab"><a href="#preset_list_content">Presets</a></li>
 </ul>
+
+<div id="preset_list_content" class="list_content">
+    <ul class="collection with-header">
+        <li class="collection-header grey darken-3">Preset List</li>
+        <li class="collection-item grey darken-4">
+            <div class="line">
+                <button class="btn waves-effect waves-dark white-text full_width modal-trigger"
+                        id="b2_preset"
+                        data-target="b2_preset_modal">Add B2 Repository
+                    <!--<i class="material-icons right">add</i>-->
+                </button>
+            </div>
+        </li>
+    </ul>
+</div>
+
 <div id="repo_list_content" class="list_content">
     <ul class="collection with-header">
         <li class="collection-header grey darken-3">Repository List</li>
@@ -307,10 +372,10 @@
 <div class="footer">
 
     <div class="data_use">Data used: {{shared_data.used_kilobytes}}
-        <div class="progress">
-            <div class="determinate"></div>
+        <div class="progress orange lighten-4">
+            <div class="determinate orange"></div>
         </div>
-         of {{shared_data.total_kilobytes}} KB
+        of {{shared_data.total_kilobytes}} KB
     </div>
 </div>
 <script>

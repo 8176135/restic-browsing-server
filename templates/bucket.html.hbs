@@ -20,7 +20,7 @@
 <body>
 <div class="heading">
     <h2>B2 Restic Restorer</h2>
-    <h4>Repository: {{repo_name}}</h4>
+    <h4>Repository: <span id="repo_name">{{repo_name}}</span></h4>
 </div>
 
 <p>{{status}}</p>
@@ -44,8 +44,8 @@
 
 <div class="footer">
     <div class="data_use">Data used: {{shared_data.used_kilobytes}}
-        <div class="progress">
-            <div class="determinate"></div>
+        <div class="progress orange lighten-4">
+            <div class="determinate orange"></div>
         </div>
         of {{shared_data.total_kilobytes}} KB
     </div>

@@ -75,6 +75,7 @@ table! {
         service_type -> Integer,
         env_name_ids -> Nullable<Text>,
         encrypted_env_values -> Nullable<Text>,
+        enc_addr_part -> Text,
     }
 }
 
@@ -192,3 +193,11 @@ pub struct DbEncryptedData {
     pub name: String,
     pub encryption_password: String,
 }
+
+#[derive(Queryable, Debug, Clone)]
+pub struct DbBasesListReturn {
+    pub env_name_ids: Option<String>,
+    pub encrypted_env_values: Option<String>,
+    pub enc_addr_part: String,
+}
+
