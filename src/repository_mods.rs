@@ -5,8 +5,29 @@ use super::{helper, db_tables};
 use super::rocket_contrib::templates::Template;
 use super::rocket::response::{Redirect, Flash};
 use super::rocket::request::{self, FromForm, FormItems, Form, FlashMessage, FromRequest, Request};
+use super::std::{error::Error, fmt};
 
 use diesel::prelude::*;
+
+#[derive(Debug)]
+enum RepoModdingError {
+    EmptyName,
+    DuplicateName,
+    DuplicateEnvVar,
+}
+
+impl fmt::Display for RepoModdingError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::RepoModdingError::*;
+        match self {
+            &EmptyName => write!(f, "Name cannot be empty"),
+            &DuplicateName => write!(f, "Name already exists"),
+            &DuplicateEnvVar => write!(f, "Environmental variable duplicated")
+        }
+    }
+}
+
+impl Error for RepoModdingError {}
 
 #[derive(FromForm)]
 pub struct EditRepoForm {
@@ -78,8 +99,19 @@ pub struct AddNewRepoForm {
 #[post("/add/service", data = "<name>")]
 pub fn add_more_services(user: ::User, name: Form<AddNewServiceForm>) -> Flash<Redirect> {
 //    println!("{:?}", name);
+    match internal_add_more_service(&user, name.into_inner()) {
+        Ok(_) => Flash::success(Redirect::to("/"), "Successfully added new service"),
+        Err(err) => match err {
+            RepoModdingError::EmptyName => Flash::error(Redirect::to("/"), "Error: Service name can not be empty"),
+            RepoModdingError::DuplicateEnvVar => Flash::error(Redirect::to("/"), "Duplicate environment variable entries"),
+            RepoModdingError::DuplicateName => Flash::error(Redirect::to("/"), "New service name already exists."),
+        }
+    }
+}
+
+fn internal_add_more_service(user: &::User, name: AddNewServiceForm) -> Result<(), RepoModdingError> {
     if name.new_service_name.trim().is_empty() {
-        return Flash::error(Redirect::to("/"), "Error: Service name can not be empty");
+        return Err(RepoModdingError::EmptyName);
     }
     use db_tables::{Services, ServiceContents, ServicesIns, ServiceContentIns};
     let con = helper::est_db_con();
@@ -95,7 +127,7 @@ pub fn add_more_services(user: ::User, name: Form<AddNewServiceForm>) -> Flash<R
 
     use helper::IsUnique::*;
     match helper::check_for_unique_error(service_insert_result).expect("Failed to add new service") {
-        NonUnique => { return Flash::error(Redirect::to("/"), "New service name already exists."); }
+        NonUnique => { return Err(RepoModdingError::EmptyName); }
         _ => {}
     }
 
@@ -113,10 +145,8 @@ pub fn add_more_services(user: ::User, name: Form<AddNewServiceForm>) -> Flash<R
         .execute(&con);
 
     match helper::check_for_unique_error(contents_insert_result).expect("Failed to add new service") {
-        Unique(_) => Flash::success(Redirect::to("/"), "Successfully added new service"),
-        NonUnique => {
-            Flash::error(Redirect::to("/"), "New repository name already exists.")
-        }
+        Unique(_) => Ok(()),
+        NonUnique => Err(RepoModdingError::DuplicateEnvVar)
     }
 }
 
@@ -226,18 +256,35 @@ pub fn delete_repo(user: ::User, repo_name: String) -> Flash<Redirect> {
 
 #[post("/add/repo", data = "<name>")]
 pub fn add_more_repos(user: ::User, name: Form<AddNewRepoForm>) -> Flash<Redirect> {
+    match internal_add_more_repos(&user, name.into_inner()) {
+        Ok(_) => Flash::success(Redirect::to("/"), "Successfully added new repository"),
+        Err(err) => match err {
+            RepoModdingError::EmptyName => Flash::error(Redirect::to("/"), "Error: Repository name can not be empty"),
+            //TODO: Add logging to this
+            _ => Flash::error(Redirect::to("/"), &format!("This really should not happen... , open an issue including this error message: {} in Adding Repository", err))
+        }
+    }
+}
+
+fn internal_add_more_repos(user: &::User, name: AddNewRepoForm) -> Result<(), RepoModdingError> {
     use db_tables::update_repositories;
 
     if name.new_repo_name.trim().is_empty() {
-        return Flash::error(Redirect::to("/"), "Error: repo name can not be empty");
+        return Err(RepoModdingError::EmptyName);
     }
 
     let con = helper::est_db_con();
-    println!("{}", name.owning_service);
-    diesel::select(update_repositories(&name.owning_service, user.id, &name.new_repo_name, &name.new_repo_name, &name.new_repo_path, helper::encrypt(&name.new_repo_password, &user.encryption_password)))
+
+    diesel::select(
+        update_repositories(
+            &name.owning_service,
+            user.id, &name.new_repo_name,
+            &name.new_repo_name,
+            &name.new_repo_path,
+            helper::encrypt(&name.new_repo_password, &user.encryption_password)))
         .execute(&con).unwrap();
 
-    Flash::success(Redirect::to("/"), "Successfully added new repository")
+    Ok(())
 }
 
 #[derive(FromForm)]
@@ -253,31 +300,39 @@ pub struct B2FormData {
 #[post("/add/preset/b2", data = "<data>")]
 pub fn add_b2_preset(user: ::User, data: Form<B2FormData>) -> Flash<Redirect> {
     use db_tables::Services;
-    let service_name =  format!("B2 - {}", data.b2_new_name);
-    let services_response = add_more_services(user.clone(), Form(AddNewServiceForm {
+    if data.b2_new_name.trim().is_empty() {
+        return Flash::error(Redirect::to("/"), "Error: Service name can not be empty");
+    }
+    let service_name = format!("B2 - {}", data.b2_bucket_name);
+    let services_response = internal_add_more_service(&user, AddNewServiceForm {
         service_type: 5,
         enc_addr_part: data.b2_bucket_name.clone(),
         new_service_name: service_name.clone(),
         env_value_list: vec![data.b2_account_id.clone(), data.b2_account_key.clone()],
         env_var_names_list: vec![29, 30],
-    }));
-
-    if services_response.name() == "error" {
-        return services_response;
+    });
+//
+    if let Err(err) = services_response {
+        return match err {
+            RepoModdingError::DuplicateName => Flash::error(Redirect::to("/"), "This preset/bucket name already exists, just add a new repository connection with the existing preset."),
+            //TODO: Add logging to this
+            _ => Flash::error(Redirect::to("/"), &format!("This really should not happen... , open an issue including this error message: {} in B2 Preset (Service)", err)),
+        }
     }
-//    let service_id = Services::table.select(Services::id)
-//        .filter(Services::owning_user.eq(user.id, ))
-//        .filter(Services::service_name.eq(&service_name))
-//        .first::<i32>(&helper::est_db_con()).expect("Failed to get service that was just inserted");
-    let repo_response = add_more_repos(user, Form(AddNewRepoForm {
+
+    let repo_response = internal_add_more_repos(&user, AddNewRepoForm {
         new_repo_name: data.b2_new_name.clone(),
         new_repo_password: data.b2_repo_password.clone(),
         new_repo_path: data.b2_repo_path.clone(),
         owning_service: service_name,
-    }.into()));
-    if repo_response.name() == "success" {
-        Flash::success(Redirect::to("/"), "B2 Preset completed")
+    });
+    if let Err(err) = repo_response {
+        match err {
+            RepoModdingError::EmptyName => Flash::error(Redirect::to("/"), "Error: Service name can not be empty"),
+            //TODO: Add logging to this
+            _ => Flash::error(Redirect::to("/"), &format!("This really should not happen... , open an issue including this error message: {} in (B2 Preset Repo)", err))
+        }
     } else {
-        repo_response
+        Flash::success(Redirect::to("/"), "B2 Preset added")
     }
 }
