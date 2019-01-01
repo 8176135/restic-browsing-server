@@ -14,8 +14,14 @@ use std::io::{Write, Read};
 use diesel::prelude::*;
 
 use std::process::Command;
+use std::sync::RwLock;
+use std::time::SystemTime;
 
 const DATABASE_URL: &str = include_str!("../database_url");
+
+lazy_static! {
+   static ref EMAIL_DOMAIN_CACHE: RwLock<(SystemTime, Vec<String>)> = RwLock::new((SystemTime::UNIX_EPOCH, Vec::new()));
+}
 
 pub fn zip_dir<T>(path: &str, writer: &mut T)
     where T: std::io::Write + std::io::Seek {
@@ -259,6 +265,39 @@ pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Resul
                 _ => Err(e)
             }
         }
+    }
+}
+
+const INVALID_EMAIL_DOMAINS: &str = "disposable-email-domains/disposable_email_blocklist.conf";
+
+pub fn check_email_domain(email: &str) -> bool {
+    let domain: &str = email.split("@").nth(1).unwrap();
+
+    let email_domains_last_modified = std::fs::metadata(INVALID_EMAIL_DOMAINS)
+        .expect("Failed to load email domains metadata").modified()
+        .unwrap();
+
+    let cache_lock = EMAIL_DOMAIN_CACHE.read().unwrap();
+
+    if email_domains_last_modified.duration_since(cache_lock.0).expect("Metadata email duration not later than cache").as_secs() > 60 {
+        drop(cache_lock);
+        let mut cache_lock = EMAIL_DOMAIN_CACHE.write().unwrap();
+        *cache_lock = (email_domains_last_modified, std::fs::read_to_string(INVALID_EMAIL_DOMAINS).expect("Failed to read email blacklist").lines().map(|c| c.to_owned()).collect::<Vec<String>>());
+        cache_lock.1.binary_search(&domain.to_owned()).is_err()
+    } else {
+        cache_lock.1.binary_search(&domain.to_owned()).is_err()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encrypt_decrypt_same_thing() {
+        let original = get_random_stuff(123);
+        let pass = get_random_stuff(50);
+        assert_eq!(decrypt(&encrypt(&original, &pass), &pass), original);
     }
 }
 

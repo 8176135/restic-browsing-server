@@ -23,10 +23,14 @@ conf_password.addEventListener("input", function (ev) {
 
 
 form.addEventListener("submit", function (ev) {
-    if(!this.checkValidity() || !validation())
-    {
+    if (!this.checkValidity() || !validation()) {
         ev.preventDefault();
     }
+});
+
+$(document).ready(function () {
+    $('.modal').modal();
+    $('.message_popup').modal("open");
 });
 
 // submit_btn.addEventListener("click", () => {

@@ -306,7 +306,7 @@ pub fn add_b2_preset(user: ::User, data: Form<B2FormData>) -> Flash<Redirect> {
     let service_name = format!("B2 - {}", data.b2_bucket_name);
     let services_response = internal_add_more_service(&user, AddNewServiceForm {
         service_type: 5,
-        enc_addr_part: data.b2_bucket_name.clone(),
+        enc_addr_part: data.b2_bucket_name.clone() + ":",
         new_service_name: service_name.clone(),
         env_value_list: vec![data.b2_account_id.clone(), data.b2_account_key.clone()],
         env_var_names_list: vec![29, 30],

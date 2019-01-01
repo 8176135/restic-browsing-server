@@ -11,6 +11,12 @@
     <!-- Compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="/public/js/jquery-3.3.1.min.js"><\/script>')</script>
+
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </head>
@@ -45,8 +51,14 @@
 
 </form>
 {{#if flash}}
-    <div class="message_popup {{status}}">
-        Message: {{flash}}
+    <div class="message_popup modal">
+        <div class="modal-content white-text {{status}}">
+            <h4>{{to_uppercase status}}</h4>
+            {{flash}}
+        </div>
+        <div class="modal-footer grey darken-1">
+            <button class="waves-effect waves-dark btn modal-close" type="submit">Close<i class="material-icons right">close</i></button>
+        </div>
     </div>
 {{/if}}
 <script src="/public/js/register_validation.js"></script>

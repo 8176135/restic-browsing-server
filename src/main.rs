@@ -32,6 +32,7 @@ use rocket_contrib::{templates::Template, json::Json};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::sync::RwLock;
+use std::time::SystemTime;
 
 use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
@@ -454,12 +455,20 @@ fn index() -> Redirect {
 }
 
 #[get("/register")]
-fn register() -> Template {
-    Template::render("signup", ())
+fn register(flash: Option<FlashMessage>) -> Template {
+    let mut context = HashMap::new();
+    if let Some(ref msg) = flash {
+        context.insert("flash", msg.msg());
+        context.insert("status", msg.name());
+    }
+    Template::render("signup", context)
 }
 
 #[post("/register_submit", data = "<registration>")]
 fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
+    if !helper::check_email_domain(&registration.email) {
+        return Flash::error(Redirect::to("/register"), "Error, temporary emails can't be used sorry.");
+    }
     let con = helper::est_db_con();
     let (password, salt) = helper::encrypt_password(&registration.password);
 
