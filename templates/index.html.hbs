@@ -148,7 +148,7 @@
             </div>
             <div class="line">
                 <code style="margin-right: 10px;" class="first_part">restic -r </code>
-                <select name="service_type" title="Service Type" style="width: 120px;" class="preselect" data-selected="{{1}}">
+                <select name="service_type" title="Service Type" style="width: 120px;" class="preselect" data-selected="{{service_selected}}">
                     <option value="-1" disabled>Same Service</option>
                     {{#each ../service_type}}
                         <option value="{{id}}">{{service_type}}</option>
