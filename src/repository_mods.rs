@@ -127,7 +127,7 @@ fn internal_add_more_service(user: &::User, name: AddNewServiceForm) -> Result<(
 
     use helper::IsUnique::*;
     match helper::check_for_unique_error(service_insert_result).expect("Failed to add new service") {
-        NonUnique => { return Err(RepoModdingError::EmptyName); }
+        NonUnique(_) => { return Err(RepoModdingError::EmptyName); }
         _ => {}
     }
 
@@ -146,7 +146,7 @@ fn internal_add_more_service(user: &::User, name: AddNewServiceForm) -> Result<(
 
     match helper::check_for_unique_error(contents_insert_result).expect("Failed to add new service") {
         Unique(_) => Ok(()),
-        NonUnique => Err(RepoModdingError::DuplicateEnvVar)
+        NonUnique(_) => Err(RepoModdingError::DuplicateEnvVar)
     }
 }
 

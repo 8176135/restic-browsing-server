@@ -74,8 +74,8 @@ pub fn change_username(user: super::User, new_name: Form<NewName>) -> Flash<Redi
     use helper::IsUnique::*;
     match helper::check_for_unique_error(insert_result).expect("Failed to update username") {
         Unique(_) => Flash::success(Redirect::to("/account/"), format!("Changed username to \"{}\"", &new_name.username)),
-        NonUnique => {
-            Flash::error(Redirect::to("/account/"), "New repository name already exists.")
+        NonUnique(_) => {
+            Flash::error(Redirect::to("/account/"), "New username name already exists.")
         }
     }
 }
@@ -92,7 +92,7 @@ pub fn change_email(user: super::User, new_email: Form<NewEmail>) -> Flash<Redir
     use helper::IsUnique::*;
     match helper::check_for_unique_error(insert_result).expect("Failed to update email") {
         Unique(_) => Flash::success(Redirect::to("/account/"), format!("Changed email to \"{}\"", &new_email.email)),
-        NonUnique => {
+        NonUnique(_) => {
             Flash::error(Redirect::to("/account/"), "New email is already registered.")
         }
     }
@@ -108,7 +108,7 @@ pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Fl
 
     let login_candidate: db_tables::DbUserLogin =
         Users::dsl::Users.filter(Users::id.eq(user.id))
-            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass))
+            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code))
             .load::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db").first().unwrap().clone();
     if helper::verify_user(&login_candidate, &new_password.old_password) {
         let _insert_result = diesel::update(Users::dsl::Users.filter(Users::id.eq(user.id)))

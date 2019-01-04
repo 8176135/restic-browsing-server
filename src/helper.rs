@@ -5,6 +5,8 @@ extern crate ring;
 extern crate base64;
 extern crate diesel;
 
+extern crate lettre;
+
 use ::db_tables;
 
 use ::std;
@@ -246,7 +248,7 @@ pub fn get_random_stuff(length: usize) -> String {
 
 //#[derive(PartialEq)]
 pub enum IsUnique<T> {
-    NonUnique,
+    NonUnique(Option<String>),
     Unique(T),
 }
 
@@ -255,11 +257,11 @@ pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Resul
         Ok(c) => Ok(IsUnique::Unique(c)),
         Err(e) => {
             match e {
-                diesel::result::Error::DatabaseError(de, _) => {
+                diesel::result::Error::DatabaseError(de, de_info) => {
                     if let diesel::result::DatabaseErrorKind::UniqueViolation = de {
-                        Ok(IsUnique::NonUnique)
+                        Ok(IsUnique::NonUnique(de_info.constraint_name().map(|c| c.to_owned())))
                     } else {
-                        Err(e)
+                        Err(diesel::result::Error::DatabaseError(de, de_info))
                     }
                 }
                 _ => Err(e)
@@ -287,6 +289,37 @@ pub fn check_email_domain(email: &str) -> bool {
     } else {
         cache_lock.1.binary_search(&domain.to_owned()).is_err()
     }
+}
+
+pub fn send_email(email: &str, title: &str, contents: &str) {
+    use self::lettre::{SendableEmail, Envelope, SmtpTransport, EmailAddress, SmtpClient, Transport};
+    let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+    let time = base64::encode(&[((time >> 56) & 0xff) as u8,
+        ((time >> 48) & 0xff) as u8,
+        ((time >> 40) & 0xff) as u8,
+        ((time >> 32) & 0xff) as u8,
+        ((time >> 24) & 0xff) as u8,
+        ((time >> 16) & 0xff) as u8,
+        ((time >> 8) & 0xff) as u8,
+        ((time) & 0xff) as u8,
+    ]);
+    let random_part = get_random_stuff(8);
+
+    let mailer = SmtpTransport::new(
+        SmtpClient::new_simple("handofcthulhu.com").expect("Failed to construct simple SmtpClient"))
+        .send(
+            SendableEmail::new(
+                Envelope::new(
+                    Some(EmailAddress::new("noreply@handofcthulhu.com".to_owned()).unwrap()),
+                    vec![EmailAddress::new(email.to_owned()).unwrap()]).unwrap(),
+                format!("<{}.{}@handofcthulhu.com>", time, random_part),
+                    format!("Subject: {}\n\n{}", title, contents).into_bytes()
+            ));
+
+//    format!(r#"Subject: Account Activation - Restic Browser
+//
+//Hello {}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)
+//Activation link: {}"#,).to_vec()
 }
 
 #[cfg(test)]

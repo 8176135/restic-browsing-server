@@ -7,6 +7,7 @@ table! {
         salt -> Text,
         enced_enc_pass -> Text,
         kilobytes_downloaded -> Integer,
+        activation_code -> Nullable<Text>,
     }
 }
 
@@ -98,6 +99,7 @@ pub struct DbUserIns {
     pub password: String,
     pub salt: String,
     pub enced_enc_pass: String,
+    pub activation_code: Option<String>,
 }
 
 #[derive(Identifiable, Queryable, Debug, Clone)]
@@ -107,6 +109,7 @@ pub struct DbUserLogin {
     pub password: String,
     pub salt: String,
     pub enced_enc_pass: String,
+    pub activation_code: Option<String>,
 }
 
 #[derive(Queryable, Debug, Clone, Serialize)]

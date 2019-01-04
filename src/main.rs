@@ -25,7 +25,7 @@ mod repository_mods;
 use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
 use rocket::http::{Cookie, Cookies, Status};
-use rocket::request::{FormItems};
+use rocket::request::FormItems;
 
 use rocket_contrib::{templates::Template, json::Json};
 
@@ -112,18 +112,22 @@ fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
     let con = helper::est_db_con();
     let login_candidate: Option<db_tables::DbUserLogin> =
         Users::dsl::Users.filter(Users::username.eq(&login.username.to_lowercase()))
-            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass))
+            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code))
             .load::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db").first().cloned();
 
     if let Some(login_candidate) = login_candidate {
         if helper::verify_user(&login_candidate, &login.password) {
-            cookies.add_private(Cookie::new("user_id", login_candidate.id.to_string()));
-            cookies.add_private(Cookie::new("repo_encryption_password",
-                                            helper::decrypt_base64(
-                                                &login_candidate.enced_enc_pass,
-                                                &login.password,
-                                                &login_candidate.salt)));
-            Flash::success(Redirect::to("/"), "Successfully logged in.")
+            if login_candidate.activation_code.is_some() {
+                Flash::error(Redirect::to("/login"), "Please activate your account (check your spam box too)!")
+            } else {
+                cookies.add_private(Cookie::new("user_id", login_candidate.id.to_string()));
+                cookies.add_private(Cookie::new("repo_encryption_password",
+                                                helper::decrypt_base64(
+                                                    &login_candidate.enced_enc_pass,
+                                                    &login.password,
+                                                    &login_candidate.salt)));
+                Flash::success(Redirect::to("/"), "Successfully logged in.")
+            }
         } else {
             Flash::error(Redirect::to("/login/"), "Username exists, invalid password though.")
         }
@@ -467,23 +471,38 @@ fn register(flash: Option<FlashMessage>) -> Template {
 #[post("/register_submit", data = "<registration>")]
 fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     if !helper::check_email_domain(&registration.email) {
-        return Flash::error(Redirect::to("/register"), "Error, temporary emails can't be used sorry.");
+        return Flash::error(Redirect::to("/register/"), "Error, temporary emails can't be used sorry.");
     }
     let con = helper::est_db_con();
     let (password, salt) = helper::encrypt_password(&registration.password);
 
     let enc = helper::get_random_stuff(32);
-
-    diesel::insert_into(db_tables::Users::table)
+    let act_code = helper::get_random_stuff(64);
+    let register_insert_res = diesel::insert_into(db_tables::Users::table)
         .values(&db_tables::DbUserIns {
             email: registration.email.to_lowercase().clone(),
             username: registration.username.to_lowercase().clone(),
             enced_enc_pass: helper::encrypt_base64(&enc, &registration.password, &salt),
             password,
             salt,
-        }).execute(&con).expect("Not inserting into database");
+            activation_code: Some(act_code.clone()),
+        }).execute(&con);
 
-    Flash::success(Redirect::to("/login/"), "Successfully Registered")
+    use helper::IsUnique::*;
+    match helper::check_for_unique_error(register_insert_res).expect("Unexpected error in registration") {
+        Unique(_) => {
+            helper::send_email(&registration.email, "Account Activation - Restic Browser",
+                               &format!("Hello {}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: {}", registration.username, act_code));
+            Flash::success(Redirect::to("/login/"), "Successfully Registered")
+        }
+        NonUnique(ref msg) if msg.is_some() => match msg.clone().unwrap().as_str() {
+            "email_UNIQUE" => Flash::error(Redirect::to("/register/"), "Email has already been registered, try (Forgot Your Password)?"),
+            "username_UNIQUE" => Flash::error(Redirect::to("/register/"), "Username already taken!"),
+            _ => panic!("New registration constraint not implemented")
+        },
+        // TODO: Add logging
+        _ => panic!("Non unique is not providing message"),
+    }
 }
 
 #[post("/retrieve/service/<service_name>")]
@@ -510,6 +529,37 @@ fn retrieve_service_data(user: User, service_name: String) -> Json<ServiceData> 
 #[get("/public/<file..>")]
 fn files(file: std::path::PathBuf) -> Option<NamedFile> {
     NamedFile::open(std::path::Path::new("public/").join(file)).ok()
+}
+
+#[get("/verify/<username>/<auth_code>")]
+fn verify_email(username: String, auth_code: String) -> Flash<Redirect> {
+    use db_tables::Users;
+
+    #[derive(AsChangeset)]
+    #[table_name = "Users"]
+    #[changeset_options(treat_none_as_null = "true")]
+    struct NullifyActCode {
+        activation_code: Option<String>
+    }
+
+    let con = helper::est_db_con();
+    let db_act_code = Users::table.filter(Users::username.eq(&username))
+        .select(Users::activation_code)
+        .first::<Option<String>>(&con).unwrap();
+
+    if let Some(db_act_code) = db_act_code {
+        if db_act_code == auth_code {
+            diesel::update(Users::table.filter(Users::username.eq(&username)))
+                .set(NullifyActCode { activation_code: None })
+                .execute(&con)
+                .expect("Removing activation code failed");
+            Flash::success(Redirect::to("/login"), "Account activated! Log in with your password.")
+        } else {
+            Flash::error(Redirect::to("/login"), "Invalid activation code")
+        }
+    } else {
+        Flash::success(Redirect::to("/login"), "Account already activated! Just log in with your password.")
+    }
 }
 
 fn main() {
