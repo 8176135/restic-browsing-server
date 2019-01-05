@@ -488,8 +488,8 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     match helper::check_for_unique_error(register_insert_res).expect("Unexpected error in registration") {
         Unique(_) => {
             helper::send_email(&registration.email, "Account Activation - Restic Browser",
-                               &format!("Hello {}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: {}",
-                                        registration.username, act_code)).expect("SHOW ME WHATS WRONG");
+                               &format!("Hello {name}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\n[Activation link][1]: \n\n[1]: https://res.handofcthulhu.com/verify/{name}/{code}",
+                                        name=registration.username, code=act_code)).expect("Failed to send email");
             Flash::success(Redirect::to("/login/"), "Successfully Registered")
         }
         NonUnique(ref msg) => match msg.clone().as_str() {
@@ -569,5 +569,5 @@ fn main() {
                ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
                register_submit, repository_mods::add_more_repos, repository_mods::add_more_services, repository_mods::edit_service, repository_mods::edit_repo, repository_mods::delete_repo, repository_mods::delete_service, repository_mods::add_b2_preset,
                account_management::edit_account, account_management::edit_account_no_login, account_management::change_username, account_management::change_email,
-               account_management::change_password, logout_no_login, files, preview_command,retrieve_service_data]).launch();
+               account_management::change_password, logout_no_login, files, preview_command,retrieve_service_data,verify_email]).launch();
 }
