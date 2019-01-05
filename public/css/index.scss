@@ -96,6 +96,13 @@ i::selection, label::selection {
   fill: white !important;
 }
 
+.announcement_box {
+  grid-area: announce;
+  justify-self: center;
+  max-width: 900px;
+  width: 100%;
+}
+
 .tabs {
   grid-area: tabs;
   justify-self: center;

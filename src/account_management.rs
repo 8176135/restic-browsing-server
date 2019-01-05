@@ -124,7 +124,7 @@ pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Fl
 }
 
 #[post("/account/delete")]
-pub fn delete_account(user: super::User, new_password: Form<NewPassword>) -> Flash<Redirect> {
+pub fn delete_account(user: super::User) -> Flash<Redirect> {
 //    use db_tables::Users;
 //
 //    let con = helper::est_db_con();

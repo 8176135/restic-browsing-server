@@ -145,7 +145,7 @@ fn already_logged_in(_user: User) -> Redirect {
 
 #[get("/")]
 fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
-    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList};
+    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList, Announcements,AnnouncementDb};
 
     #[derive(Serialize, Queryable)]
     struct ConInfoData {
@@ -172,6 +172,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         service_type: Vec<db_tables::DbServiceType>,
         services: Vec<ServiceData>,
         shared_data: SharedPageData,
+        announcements: Vec<AnnouncementDb>
     }
 
     let (flash, status) = match flash {
@@ -194,6 +195,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
             used_kilobytes: helper::get_used_kilos(&con, user.id),
             total_kilobytes: SIZE_CAP_KILOBYTES,
         },
+        announcements: Vec::new()
     };
 
     item.configs = ConnectionInfo::dsl::ConnectionInfo.inner_join(Services::table)
@@ -206,7 +208,10 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         .load::<db_tables::DbServiceType>(&con).expect("Service type query not working");
 
     item.env_names = EnvNames::dsl::EnvNames
-        .load::<db_tables::DbEnvNames>(&con).expect("Service type query not working");
+        .load::<db_tables::DbEnvNames>(&con).expect("Env names query not working");
+
+    item.announcements = Announcements::table
+        .load::<AnnouncementDb>(&con).expect("Announcement query not working");
 
     item.services = {
         let temp: Vec<DbBasesList> = BasesList::dsl::BasesList

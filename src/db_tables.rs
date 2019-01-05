@@ -57,6 +57,15 @@ table! {
 }
 
 table! {
+    Announcements (id) {
+        id -> Integer,
+        displayed -> Bool,
+        title -> Text,
+        contents -> Text,
+    }
+}
+
+table! {
     QueryView (name, owning_user) {
         name -> Text,
         path -> Text,
@@ -184,6 +193,13 @@ pub struct DbQueryView {
     pub enc_addr_part: String,
 }
 
+#[derive(Serialize,Queryable, Debug)]
+pub struct AnnouncementDb {
+    id: i32,
+    displayed: bool,
+    title: String,
+    contents: String,
+}
 //#[derive(Identifiable, Queryable, Debug, Clone)]
 //#[table_name = "ConnectionInfo"]
 //pub struct ConnectionInfoUpdate {

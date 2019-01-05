@@ -190,6 +190,19 @@
     <h2>Restic Restorer</h2>
     <!--<h4>Repository List</h4>-->
 </div>
+
+{{#if announcements}}
+    <ul class="collection with-header announcement_box">
+        <li class="collection-header orange darken-3"><b>Announcements: </b></li>
+        {{#each announcements}}
+        <li class="collection-item orange darken-4">
+            <b style="font-size: 13pt">{{title}}</b><br>
+            {{contents}}
+        </li>
+        {{/each}}
+    </ul>
+{{/if}}
+
 <ul class="tabs black">
     <li class="tab"><a href="#repo_list_content">Repository List</a></li>
     <li class="tab"><a href="#service_list_content">Services</a></li>
