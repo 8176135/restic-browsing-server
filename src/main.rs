@@ -489,7 +489,7 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
         Unique(_) => {
             helper::send_email(&registration.email, "Account Activation - Restic Browser",
                                &format!("Hello {}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: {}",
-                                        registration.username, act_code));
+                                        registration.username, act_code)).expect("SHOW ME WHATS WRONG");
             Flash::success(Redirect::to("/login/"), "Successfully Registered")
         }
         NonUnique(ref msg) => match msg.clone().as_str() {

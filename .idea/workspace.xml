@@ -9,15 +9,8 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Actually sending out the email">
+    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Fixed registration unique errors handling, suppressed diesel warnings, changed helper to self to work around intellij rust errors, removed unused imports, fixed register_submit links">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/account_management.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/account_management.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/db_tables.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/db_tables.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/handlebar_helpers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/handlebar_helpers.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/helper.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/helper.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/repository_mods.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/repository_mods.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/signup.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/signup.html.hbs" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -48,11 +41,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="602">
-              <caret line="487" column="32" selection-start-line="487" selection-start-column="32" selection-end-line="487" selection-end-column="32" />
+            <state relative-caret-position="546">
+              <caret line="26" column="16" selection-start-line="26" selection-start-column="16" selection-end-line="26" selection-end-column="16" />
             </state>
           </provider>
         </entry>
@@ -66,11 +59,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/helper.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="476">
-              <caret line="264" column="67" lean-forward="true" selection-start-line="264" selection-start-column="67" selection-end-line="264" selection-end-column="67" />
+            <state relative-caret-position="644">
+              <caret line="272" column="27" lean-forward="true" selection-start-line="272" selection-start-column="27" selection-end-line="272" selection-end-column="27" />
             </state>
           </provider>
         </entry>
@@ -230,9 +223,9 @@
         <option value="$PROJECT_DIR$/src/repository_mods.rs" />
         <option value="$PROJECT_DIR$/src/handlebar_helpers.rs" />
         <option value="$PROJECT_DIR$/src/account_management.rs" />
-        <option value="$PROJECT_DIR$/src/main.rs" />
         <option value="$PROJECT_DIR$/templates/signup.html.hbs" />
         <option value="$PROJECT_DIR$/src/helper.rs" />
+        <option value="$PROJECT_DIR$/src/main.rs" />
       </list>
     </option>
   </component>
@@ -446,7 +439,7 @@
       <workItem from="1546469881749" duration="15041000" />
       <workItem from="1546562486041" duration="7817000" />
       <workItem from="1546633640957" duration="348000" />
-      <workItem from="1546639438871" duration="8159000" />
+      <workItem from="1546639438871" duration="8481000" />
     </task>
     <task id="LOCAL-00001" summary="Registration page frontend prototyped">
       <created>1536902229985</created>
@@ -637,11 +630,18 @@
       <option name="project" value="LOCAL" />
       <updated>1546633702738</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="Fixed registration unique errors handling, suppressed diesel warnings, changed helper to self to work around intellij rust errors, removed unused imports, fixed register_submit links">
+      <created>1546657083659</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1546657083659</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="715170000" />
+    <option name="totallyTimeSpent" value="715492000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -656,7 +656,7 @@
     <frame x="57" y="-5" width="2508" height="1450" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.112561174" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.112561174" />
       <window_info id="Structure" order="1" sideWeight="0.5022659" side_tool="true" weight="0.109298535" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -667,8 +667,8 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32927758" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.25584906" />
-      <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.50611746" side_tool="true" weight="0.2483019" />
-      <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.49388254" visible="true" weight="0.21584906" />
+      <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.5065253" side_tool="true" weight="0.21584906" />
+      <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.49347472" weight="0.20377359" />
       <window_info anchor="bottom" id="Database Changes" order="10" show_stripe_button="false" />
       <window_info anchor="bottom" id="Messages" order="11" weight="0.22885196" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
@@ -704,7 +704,6 @@
     <option name="version" value="1" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Ok, compiles" />
     <MESSAGE value="Everything for just B2 works" />
     <MESSAGE value="Updates" />
     <MESSAGE value="Fully functional" />
@@ -729,7 +728,8 @@
     <MESSAGE value="Fixed up service_selected bug." />
     <MESSAGE value="Filtered out temporary emails, make sure to pull disposable-email-domains repo" />
     <MESSAGE value="Actually sending out the email" />
-    <option name="LAST_COMMIT_MESSAGE" value="Actually sending out the email" />
+    <MESSAGE value="Fixed registration unique errors handling, suppressed diesel warnings, changed helper to self to work around intellij rust errors, removed unused imports, fixed register_submit links" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed registration unique errors handling, suppressed diesel warnings, changed helper to self to work around intellij rust errors, removed unused imports, fixed register_submit links" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$USER_HOME$/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/lib/rustlib/src/rust/src/libstd/sync/mutex.rs" />
@@ -1051,13 +1051,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="602">
-          <caret line="487" column="32" selection-start-line="487" selection-start-column="32" selection-end-line="487" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/mod.rs">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="337">
@@ -1088,8 +1081,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/helper.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="476">
-          <caret line="264" column="67" lean-forward="true" selection-start-line="264" selection-start-column="67" selection-end-line="264" selection-end-column="67" />
+        <state relative-caret-position="644">
+          <caret line="272" column="27" lean-forward="true" selection-start-line="272" selection-start-column="27" selection-end-line="272" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="546">
+          <caret line="26" column="16" selection-start-line="26" selection-start-column="16" selection-end-line="26" selection-end-column="16" />
         </state>
       </provider>
     </entry>
