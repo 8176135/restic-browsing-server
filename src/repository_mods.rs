@@ -2,9 +2,8 @@
 extern crate diesel;
 
 use super::{helper, db_tables};
-use super::rocket_contrib::templates::Template;
 use super::rocket::response::{Redirect, Flash};
-use super::rocket::request::{self, FromForm, FormItems, Form, FlashMessage, FromRequest, Request};
+use super::rocket::request::{FromForm, FormItems, Form};
 use super::std::{error::Error, fmt};
 
 use diesel::prelude::*;
@@ -299,7 +298,7 @@ pub struct B2FormData {
 
 #[post("/add/preset/b2", data = "<data>")]
 pub fn add_b2_preset(user: ::User, data: Form<B2FormData>) -> Flash<Redirect> {
-    use db_tables::Services;
+
     if data.b2_new_name.trim().is_empty() {
         return Flash::error(Redirect::to("/"), "Error: Service name can not be empty");
     }

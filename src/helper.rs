@@ -4,6 +4,7 @@ extern crate zip;
 extern crate ring;
 extern crate base64;
 extern crate diesel;
+extern crate regex;
 
 extern crate lettre;
 
@@ -19,10 +20,13 @@ use std::process::Command;
 use std::sync::RwLock;
 use std::time::SystemTime;
 
+use self::regex::Regex;
+
 const DATABASE_URL: &str = include_str!("../database_url");
 
 lazy_static! {
    static ref EMAIL_DOMAIN_CACHE: RwLock<(SystemTime, Vec<String>)> = RwLock::new((SystemTime::UNIX_EPOCH, Vec::new()));
+   static ref DUPLICATE_KEY_MSG_SEPERATOR: Regex = Regex::new(r#"Duplicate entry '(.*?[^\\]?)' for key '(.*?[^\\]?)'"#).unwrap();
 }
 
 pub fn zip_dir<T>(path: &str, writer: &mut T)
@@ -85,7 +89,7 @@ pub fn delete_dir_contents(read_dir_res: Result<std::fs::ReadDir, std::io::Error
 //pub fn encrypt(cipher_txt: &str, password: &str)
 
 pub fn encrypt_base64(plain_txt: &str, password: &str, nonce: &str) -> String {
-    use helper::ring::aead::CHACHA20_POLY1305;
+    use self::ring::aead::CHACHA20_POLY1305;
 
     let mut nonce = base64::decode(&nonce).unwrap();
     let mut key = [0; 32];
@@ -112,7 +116,7 @@ pub fn encrypt_base64(plain_txt: &str, password: &str, nonce: &str) -> String {
 }
 
 pub fn decrypt_base64(cipher_txt: &str, password: &str, nonce: &str) -> String {
-    use helper::ring::aead::CHACHA20_POLY1305;
+    use self::ring::aead::CHACHA20_POLY1305;
 
     let mut nonce = base64::decode(&nonce).unwrap();
     let mut key = [0; 32];
@@ -138,8 +142,8 @@ pub fn decrypt_base64(cipher_txt: &str, password: &str, nonce: &str) -> String {
 }
 
 pub fn encrypt(plain_txt: &str, key: &str) -> String {
-    use helper::ring::rand::SecureRandom;
-    use helper::ring::aead::CHACHA20_POLY1305;
+    use self::ring::rand::SecureRandom;
+    use self::ring::aead::CHACHA20_POLY1305;
 
     let key = base64::decode(key).unwrap();
     let mut nonce = vec![0u8; CHACHA20_POLY1305.nonce_len()];
@@ -156,7 +160,7 @@ pub fn encrypt(plain_txt: &str, key: &str) -> String {
 }
 
 pub fn decrypt(cipher_txt: &str, key: &str) -> String {
-    use helper::ring::aead::CHACHA20_POLY1305;
+    use self::ring::aead::CHACHA20_POLY1305;
 
     let key = base64::decode(key).unwrap();
 
@@ -186,7 +190,7 @@ pub fn est_db_con() -> diesel::MysqlConnection {
 }
 
 pub fn encrypt_password(password: &str) -> (String, String) {
-    use helper::ring::rand::SecureRandom;
+    use self::ring::rand::SecureRandom;
 
     let mut salt_buffer = Vec::new();
     let mut output = [0u8; ring::digest::SHA256_OUTPUT_LEN];
@@ -236,7 +240,7 @@ pub fn get_used_kilos(con: &diesel::MysqlConnection, user_id: i32) -> i32 {
 }
 
 pub fn get_random_stuff(length: usize) -> String {
-    use helper::ring::rand::SecureRandom;
+    use self::ring::rand::SecureRandom;
 
     let mut store: Vec<u8> = Vec::new();
     store.resize(length, 0u8);
@@ -248,7 +252,7 @@ pub fn get_random_stuff(length: usize) -> String {
 
 //#[derive(PartialEq)]
 pub enum IsUnique<T> {
-    NonUnique(Option<String>),
+    NonUnique(String),
     Unique(T),
 }
 
@@ -259,7 +263,9 @@ pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Resul
             match e {
                 diesel::result::Error::DatabaseError(de, de_info) => {
                     if let diesel::result::DatabaseErrorKind::UniqueViolation = de {
-                        Ok(IsUnique::NonUnique(de_info.constraint_name().map(|c| c.to_owned())))
+                        Ok(IsUnique::NonUnique(
+                            DUPLICATE_KEY_MSG_SEPERATOR.captures(de_info.message()).expect("Database unique error message changed")
+                                .get(2).expect("Key name in msg empty").as_str().to_owned()))
                     } else {
                         Err(diesel::result::Error::DatabaseError(de, de_info))
                     }
@@ -291,7 +297,7 @@ pub fn check_email_domain(email: &str) -> bool {
     }
 }
 
-pub fn send_email(email: &str, title: &str, contents: &str) {
+pub fn send_email(email: &str, title: &str, contents: &str) -> Result<self::lettre::smtp::response::Response, lettre::smtp::error::Error> {
     use self::lettre::{SendableEmail, Envelope, SmtpTransport, EmailAddress, SmtpClient, Transport};
     let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
     let time = base64::encode(&[((time >> 56) & 0xff) as u8,
@@ -303,18 +309,18 @@ pub fn send_email(email: &str, title: &str, contents: &str) {
         ((time >> 8) & 0xff) as u8,
         ((time) & 0xff) as u8,
     ]);
+
     let random_part = get_random_stuff(8);
 
-    let mailer = SmtpTransport::new(
+    SmtpTransport::new(
         SmtpClient::new_simple("handofcthulhu.com").expect("Failed to construct simple SmtpClient"))
-        .send(
-            SendableEmail::new(
-                Envelope::new(
-                    Some(EmailAddress::new("noreply@handofcthulhu.com".to_owned()).unwrap()),
-                    vec![EmailAddress::new(email.to_owned()).unwrap()]).unwrap(),
-                format!("<{}.{}@handofcthulhu.com>", time, random_part),
-                    format!("Subject: {}\n\n{}", title, contents).into_bytes()
-            ));
+        .send(SendableEmail::new(
+            Envelope::new(
+                Some(EmailAddress::new("noreply@handofcthulhu.com".to_owned()).unwrap()),
+                vec![EmailAddress::new(email.to_owned()).unwrap()]).unwrap(),
+            format!("<{}.{}@handofcthulhu.com>", time, random_part),
+            format!("Subject: {}\n\n{}", title, contents).into_bytes(),
+        ))
 
 //    format!(r#"Subject: Account Activation - Restic Browser
 //

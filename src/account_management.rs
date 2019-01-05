@@ -3,7 +3,7 @@ extern crate diesel;
 use super::{helper, db_tables};
 use super::rocket_contrib::templates::{Template};
 use super::rocket::response::{Redirect, Flash};
-use super::rocket::request::{self, Form, FlashMessage, FromRequest, Request};
+use super::rocket::request::{Form, FlashMessage};
 use diesel::prelude::*;
 
 #[get("/account")]

@@ -1,4 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro)]
+#![allow(proc_macro_derive_resolution_fallback)]
+
 
 #[macro_use]
 extern crate rocket;
@@ -13,7 +15,6 @@ extern crate serde;
 #[macro_use]
 extern crate lazy_static;
 
-extern crate regex;
 extern crate dirs;
 
 mod helper;
@@ -25,20 +26,15 @@ mod repository_mods;
 use rocket::response::{Redirect, Flash, status::NotFound};
 use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
 use rocket::http::{Cookie, Cookies, Status};
-use rocket::request::FormItems;
 
 use rocket_contrib::{templates::Template, json::Json};
 
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::sync::RwLock;
-use std::time::SystemTime;
 
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use diesel::prelude::*;
 use rocket::response::NamedFile;
-
-use regex::Regex;
 
 #[derive(FromForm)]
 struct Login {
@@ -79,9 +75,6 @@ const SIZE_CAP_KILOBYTES: i32 = 100 * 1000;
 lazy_static! {
     static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<(String,i64)>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
-    static ref B2_APP_KEY_TEST: Regex = Regex::new("[^\\w\\/+=-]").unwrap();
-    static ref B2_APP_ID_TEST: Regex = Regex::new("[^\\da-fA-F]").unwrap();
-    static ref B2_BUCKET_NAME_TEST: Regex = Regex::new("[^\\w-.\\/]").unwrap();
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for User {
@@ -152,7 +145,7 @@ fn already_logged_in(_user: User) -> Redirect {
 
 #[get("/")]
 fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
-    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList, Users};
+    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList};
 
     #[derive(Serialize, Queryable)]
     struct ConInfoData {
@@ -477,7 +470,10 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     let (password, salt) = helper::encrypt_password(&registration.password);
 
     let enc = helper::get_random_stuff(32);
-    let act_code = helper::get_random_stuff(64);
+
+    let act_code = base64::encode_config(&base64::decode(&helper::get_random_stuff(64)).unwrap(), base64::URL_SAFE_NO_PAD);
+    ;
+
     let register_insert_res = diesel::insert_into(db_tables::Users::table)
         .values(&db_tables::DbUserIns {
             email: registration.email.to_lowercase().clone(),
@@ -492,16 +488,16 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     match helper::check_for_unique_error(register_insert_res).expect("Unexpected error in registration") {
         Unique(_) => {
             helper::send_email(&registration.email, "Account Activation - Restic Browser",
-                               &format!("Hello {}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: {}", registration.username, act_code));
+                               &format!("Hello {}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: {}",
+                                        registration.username, act_code));
             Flash::success(Redirect::to("/login/"), "Successfully Registered")
         }
-        NonUnique(ref msg) if msg.is_some() => match msg.clone().unwrap().as_str() {
+        NonUnique(ref msg) => match msg.clone().as_str() {
             "email_UNIQUE" => Flash::error(Redirect::to("/register/"), "Email has already been registered, try (Forgot Your Password)?"),
             "username_UNIQUE" => Flash::error(Redirect::to("/register/"), "Username already taken!"),
-            _ => panic!("New registration constraint not implemented")
+           _ => panic!("New registration constraint not implemented")
         },
-        // TODO: Add logging
-        _ => panic!("Non unique is not providing message"),
+        //_ => panic!("Non unique is not providing message"),
     }
 }
 

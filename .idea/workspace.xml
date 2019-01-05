@@ -9,16 +9,15 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Filtered out temporary emails, make sure to pull disposable-email-domains repo">
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/Hand_of_Cthulhu.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/Hand_of_Cthulhu.xml" afterDir="false" />
+    <list default="true" id="9c1b942e-865f-4ee6-bff3-d9a0bf2a8362" name="Default" comment="Actually sending out the email">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/account_management.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/account_management.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/db_tables.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/db_tables.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/handlebar_helpers.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/handlebar_helpers.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/helper.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/helper.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/repository_mods.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/repository_mods.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/signup.html.hbs" beforeDir="false" afterPath="$PROJECT_DIR$/templates/signup.html.hbs" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -52,14 +51,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="319">
-              <caret line="545" column="25" selection-start-line="545" selection-start-column="22" selection-end-line="545" selection-end-column="25" />
-              <folding>
-                <element signature="e#4764#7528#0" />
-                <element signature="e#7777#8030#0" />
-                <element signature="e#8149#13705#0" />
-                <element signature="e#13875#16051#0" />
-              </folding>
+            <state relative-caret-position="602">
+              <caret line="487" column="32" selection-start-line="487" selection-start-column="32" selection-end-line="487" selection-end-column="32" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/account_management.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="504">
+              <caret line="31" column="20" lean-forward="true" selection-start-line="31" selection-start-column="20" selection-end-line="31" selection-end-column="20" />
             </state>
           </provider>
         </entry>
@@ -67,26 +69,17 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/helper.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="564">
-              <caret line="314" column="34" selection-start-line="314" selection-start-column="34" selection-end-line="314" selection-end-column="34" />
+            <state relative-caret-position="476">
+              <caret line="264" column="67" lean-forward="true" selection-start-line="264" selection-start-column="67" selection-end-line="264" selection-end-column="67" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/lib.rs">
+        <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="433">
-              <caret line="155" column="11" selection-start-line="155" selection-start-column="11" selection-end-line="155" selection-end-column="11" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Cargo.toml">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="483">
-              <caret line="23" column="24" selection-start-line="23" selection-start-column="24" selection-end-line="23" selection-end-column="24" />
+            <state>
+              <caret column="48" lean-forward="true" selection-end-line="1" />
             </state>
           </provider>
         </entry>
@@ -94,8 +87,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/templates/signup.html.hbs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="966">
-              <caret line="46" column="72" selection-start-line="46" selection-start-column="72" selection-end-line="46" selection-end-column="72" />
+            <state relative-caret-position="202">
+              <caret line="20" column="68" selection-start-line="20" selection-start-column="68" selection-end-line="20" selection-end-column="68" />
             </state>
           </provider>
         </entry>
@@ -103,8 +96,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/mod.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2646">
-              <caret line="126" column="11" selection-start-line="126" selection-start-column="11" selection-end-line="126" selection-end-column="11" />
+            <state relative-caret-position="337">
+              <caret line="279" column="53" selection-start-line="279" selection-start-column="53" selection-end-line="279" selection-end-column="53" />
             </state>
           </provider>
         </entry>
@@ -112,26 +105,35 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/repository_mods.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2709">
-              <caret line="129" column="14" selection-start-line="129" selection-start-column="8" selection-end-line="129" selection-end-column="14" />
+            <state relative-caret-position="84">
+              <caret line="4" selection-start-line="4" selection-end-line="4" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/templates/index.html.hbs">
+        <entry file="file://$PROJECT_DIR$/src/handlebar_helpers.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="336">
-              <caret line="16" column="55" selection-start-line="16" selection-start-column="55" selection-end-line="16" selection-end-column="55" />
+            <state relative-caret-position="63">
+              <caret line="3" column="32" selection-start-line="3" selection-start-column="32" selection-end-line="3" selection-end-column="32" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/rocket-0.4.0/src/response/flash.rs">
+        <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/error.rs">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2142">
-              <caret line="102" column="9" selection-start-line="102" selection-start-column="9" selection-end-line="102" selection-end-column="9" />
+            <state relative-caret-position="842">
+              <caret line="131" column="33" selection-start-line="131" selection-start-column="33" selection-end-line="131" selection-end-column="33" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/response.rs">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="337">
+              <caret line="118" column="11" selection-start-line="118" selection-start-column="11" selection-end-line="118" selection-end-column="11" />
             </state>
           </provider>
         </entry>
@@ -150,24 +152,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>services</find>
-      <find>regis</find>
-      <find>routes!</find>
-      <find>routes</find>
-      <find>databas</find>
-      <find>email</find>
-      <find>flash</find>
-      <find>modal</find>
-      <find>flashMes</find>
-      <find>nwytg</find>
-      <find>FlashMessage</find>
-      <find>unique</find>
-      <find>NoNUni</find>
-      <find>Non</find>
-      <find>NonUni</find>
-      <find>dbUserLog</find>
-      <find>Option</find>
-      <find>msg</find>
       <find>diesel::select</find>
       <find>select</find>
       <find>diesel</find>
@@ -175,11 +159,29 @@
       <find>value</find>
       <find>diesel::update</find>
       <find>value(</find>
-      <find>regist</find>
       <find>Users</find>
       <find>get_random_stuff</find>
       <find>byteorder</find>
       <find>use</find>
+      <find>Non</find>
+      <find>ss</find>
+      <find>base</find>
+      <find>activation</find>
+      <find>email</find>
+      <find>register</find>
+      <find>send_</find>
+      <find>base64</find>
+      <find>registe</find>
+      <find>err msg</find>
+      <find>CHA</find>
+      <find>captures</find>
+      <find>regex</find>
+      <find>services</find>
+      <find>use ser</find>
+      <find>NotFound</find>
+      <find>register_submi</find>
+      <find>regist</find>
+      <find>err</find>
     </findStrings>
     <replaceStrings>
       <replace>:</replace>
@@ -205,7 +207,6 @@
         <option value="$PROJECT_DIR$/public/css/login.css" />
         <option value="$PROJECT_DIR$/public/css/signup.scss" />
         <option value="$PROJECT_DIR$/public/js/jquery.bonsai.js" />
-        <option value="$PROJECT_DIR$/src/handlebar_helpers.rs" />
         <option value="$PROJECT_DIR$/public/css/_mixins.scss" />
         <option value="$PROJECT_DIR$/public/css/account.scss" />
         <option value="$PROJECT_DIR$/public/js/account.js" />
@@ -224,12 +225,13 @@
         <option value="$PROJECT_DIR$/templates/index.html.hbs" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/public/js/register_validation.js" />
-        <option value="$PROJECT_DIR$/templates/signup.html.hbs" />
-        <option value="$PROJECT_DIR$/src/repository_mods.rs" />
-        <option value="$PROJECT_DIR$/src/db_tables.rs" />
-        <option value="$PROJECT_DIR$/src/account_management.rs" />
         <option value="$PROJECT_DIR$/Cargo.toml" />
+        <option value="$PROJECT_DIR$/src/db_tables.rs" />
+        <option value="$PROJECT_DIR$/src/repository_mods.rs" />
+        <option value="$PROJECT_DIR$/src/handlebar_helpers.rs" />
+        <option value="$PROJECT_DIR$/src/account_management.rs" />
         <option value="$PROJECT_DIR$/src/main.rs" />
+        <option value="$PROJECT_DIR$/templates/signup.html.hbs" />
         <option value="$PROJECT_DIR$/src/helper.rs" />
       </list>
     </option>
@@ -293,6 +295,11 @@
               <item name="duplicati_proxy" type="b2602c69:ProjectViewProjectNode" />
               <item name="duplicati_proxy" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="duplicati_proxy" type="b2602c69:ProjectViewProjectNode" />
+              <item name="duplicati_proxy" type="462c0819:PsiDirectoryNode" />
+              <item name="templates" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -438,6 +445,8 @@
       <workItem from="1546373155759" duration="21506000" />
       <workItem from="1546469881749" duration="15041000" />
       <workItem from="1546562486041" duration="7817000" />
+      <workItem from="1546633640957" duration="348000" />
+      <workItem from="1546639438871" duration="8159000" />
     </task>
     <task id="LOCAL-00001" summary="Registration page frontend prototyped">
       <created>1536902229985</created>
@@ -621,11 +630,18 @@
       <option name="project" value="LOCAL" />
       <updated>1546380238345</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="Actually sending out the email">
+      <created>1546633702738</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1546633702738</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="706663000" />
+    <option name="totallyTimeSpent" value="715170000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -640,7 +656,7 @@
     <frame x="57" y="-5" width="2508" height="1450" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.110929854" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.49773413" visible="true" weight="0.112561174" />
       <window_info id="Structure" order="1" sideWeight="0.5022659" side_tool="true" weight="0.109298535" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -652,7 +668,7 @@
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32927758" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.25584906" />
       <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.50611746" side_tool="true" weight="0.2483019" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="9" sideWeight="0.49388254" visible="true" weight="0.21584906" />
+      <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.49388254" visible="true" weight="0.21584906" />
       <window_info anchor="bottom" id="Database Changes" order="10" show_stripe_button="false" />
       <window_info anchor="bottom" id="Messages" order="11" weight="0.22885196" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
@@ -688,7 +704,6 @@
     <option name="version" value="1" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Backup commit" />
     <MESSAGE value="Ok, compiles" />
     <MESSAGE value="Everything for just B2 works" />
     <MESSAGE value="Updates" />
@@ -713,19 +728,10 @@
     <MESSAGE value="Fixed presets function, added new error type, removed bucket list header, fixed repo password length requirement" />
     <MESSAGE value="Fixed up service_selected bug." />
     <MESSAGE value="Filtered out temporary emails, make sure to pull disposable-email-domains repo" />
-    <option name="LAST_COMMIT_MESSAGE" value="Filtered out temporary emails, make sure to pull disposable-email-domains repo" />
+    <MESSAGE value="Actually sending out the email" />
+    <option name="LAST_COMMIT_MESSAGE" value="Actually sending out the email" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/lib/rustlib/src/rust/src/libstd/io/cursor.rs" />
-    <entry file="file://$PROJECT_DIR$/Rocket.toml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="48">
-          <caret line="2" column="11" selection-start-line="2" selection-start-column="11" selection-end-line="2" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/dirs-1.0.4/src/lib.rs" />
-    <entry file="file://$USER_HOME$/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src/libstd/fs.rs" />
     <entry file="file://$USER_HOME$/.rustup/toolchains/nightly-x86_64-pc-windows-msvc/lib/rustlib/src/rust/src/libstd/sync/mutex.rs" />
     <entry file="file://$PROJECT_DIR$/TEST">
       <provider selected="true" editor-type-id="text-editor">
@@ -791,12 +797,12 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/public/css/index.css.map">
+      <provider editor-type-id="sourcemapFileViewerProvider" />
       <provider selected="true" editor-type-id="text-editor">
         <state>
           <caret selection-end-column="1" />
         </state>
       </provider>
-      <provider editor-type-id="sourcemapFileViewerProvider" />
     </entry>
     <entry file="file://$PROJECT_DIR$/public/css/index.scss">
       <provider selected="true" editor-type-id="text-editor">
@@ -975,13 +981,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/account_management.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="981">
-          <caret line="94" column="25" lean-forward="true" selection-start-line="94" selection-start-column="25" selection-end-line="94" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Cargo.lock">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="54">
@@ -989,24 +988,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/templates/signup.html.hbs">
+    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/lib.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="966">
-          <caret line="46" column="72" selection-start-line="46" selection-start-column="72" selection-end-line="46" selection-end-column="72" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/mod.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2646">
-          <caret line="126" column="11" selection-start-line="126" selection-start-column="11" selection-end-line="126" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/repository_mods.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2709">
-          <caret line="129" column="14" selection-start-line="129" selection-start-column="8" selection-end-line="129" selection-end-column="14" />
+        <state relative-caret-position="3003">
+          <caret line="155" column="11" selection-start-line="155" selection-start-column="11" selection-end-line="155" selection-end-column="11" />
         </state>
       </provider>
     </entry>
@@ -1024,16 +1009,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/lib.rs">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="433">
-          <caret line="155" column="11" selection-start-line="155" selection-start-column="11" selection-end-line="155" selection-end-column="11" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Cargo.toml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="483">
@@ -1041,23 +1016,80 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/response.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="337">
+          <caret line="118" column="11" selection-start-line="118" selection-start-column="11" selection-end-line="118" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/error.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="842">
+          <caret line="131" column="33" selection-start-line="131" selection-start-column="33" selection-end-line="131" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/base64-0.10.0/src/lib.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="812">
+          <caret line="141" column="39" lean-forward="true" selection-start-line="141" selection-start-column="39" selection-end-line="141" selection-end-column="39" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/repository_mods.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="84">
+          <caret line="4" selection-start-line="4" selection-end-line="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/handlebar_helpers.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="63">
+          <caret line="3" column="32" selection-start-line="3" selection-start-column="32" selection-end-line="3" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="319">
-          <caret line="545" column="25" selection-start-line="545" selection-start-column="22" selection-end-line="545" selection-end-column="25" />
-          <folding>
-            <element signature="e#4764#7528#0" />
-            <element signature="e#7777#8030#0" />
-            <element signature="e#8149#13705#0" />
-            <element signature="e#13875#16051#0" />
-          </folding>
+        <state relative-caret-position="602">
+          <caret line="487" column="32" selection-start-line="487" selection-start-column="32" selection-end-line="487" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.cargo/registry/src/github.com-1ecc6299db9ec823/lettre-openssl111-0.9.0/src/smtp/mod.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="337">
+          <caret line="279" column="53" selection-start-line="279" selection-start-column="53" selection-end-line="279" selection-end-column="53" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/templates/signup.html.hbs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="202">
+          <caret line="20" column="68" selection-start-line="20" selection-start-column="68" selection-end-line="20" selection-end-column="68" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/db_tables.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="48" lean-forward="true" selection-end-line="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/account_management.rs">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="504">
+          <caret line="31" column="20" lean-forward="true" selection-start-line="31" selection-start-column="20" selection-end-line="31" selection-end-column="20" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/helper.rs">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="564">
-          <caret line="314" column="34" selection-start-line="314" selection-start-column="34" selection-end-line="314" selection-end-column="34" />
+        <state relative-caret-position="476">
+          <caret line="264" column="67" lean-forward="true" selection-start-line="264" selection-start-column="67" selection-end-line="264" selection-end-column="67" />
         </state>
       </provider>
     </entry>
