@@ -122,3 +122,30 @@ pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Fl
         Flash::error(Redirect::to("/account/"), "Error, incorrect old password.")
     }
 }
+
+#[post("/account/delete")]
+pub fn delete_account(user: super::User, new_password: Form<NewPassword>) -> Flash<Redirect> {
+//    use db_tables::Users;
+//
+//    let con = helper::est_db_con();
+//
+//    let (password, salt) = helper::encrypt_password(&new_password.password);
+//
+//    let login_candidate: db_tables::DbUserLogin =
+//        Users::dsl::Users.filter(Users::id.eq(user.id))
+//            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code))
+//            .load::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db").first().unwrap().clone();
+//    if helper::verify_user(&login_candidate, &new_password.old_password) {
+//        let _insert_result = diesel::update(Users::dsl::Users.filter(Users::id.eq(user.id)))
+//            .set((Users::password.eq(&password),
+//                  Users::salt.eq(&salt),
+//                  Users::enced_enc_pass.eq(helper::encrypt_base64(&user.encryption_password, &new_password.password, &salt))))
+//            .execute(&con).expect("Failed to update password in DB");
+//
+//        Flash::success(Redirect::to("/account/"), "Successfully updated password")
+//    } else {
+//        Flash::error(Redirect::to("/account/"), "Error, incorrect old password.")
+//    }
+
+    Flash::error(Redirect::to("/account/"), "Not implemented yet")
+}

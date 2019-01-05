@@ -487,10 +487,10 @@ fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     use helper::IsUnique::*;
     match helper::check_for_unique_error(register_insert_res).expect("Unexpected error in registration") {
         Unique(_) => {
-            helper::send_email(&registration.email, "Account Activation - Restic Browser",
+            helper::send_email(&registration.email, "Account Activation - Restic Restorer",
                                &format!("Hello {name}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: https://res.handofcthulhu.com/verify/{name}/{code}",
                                         name=registration.username, code=act_code)).expect("Failed to send email");
-            Flash::success(Redirect::to("/login/"), "Successfully Registered")
+            Flash::success(Redirect::to("/login/"), "Successfully Registered, check your email for the link to activate your account.")
         }
         NonUnique(ref msg) => match msg.clone().as_str() {
             "email_UNIQUE" => Flash::error(Redirect::to("/register/"), "Email has already been registered, try (Forgot Your Password)?"),
