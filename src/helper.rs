@@ -313,7 +313,8 @@ pub fn send_email(email: &str, title: &str, contents: &str) -> Result<self::lett
     let random_part = get_random_stuff(8);
 
     SmtpTransport::new(
-        SmtpClient::new_simple("handofcthulhu.com").expect("Failed to construct simple SmtpClient"))
+        //TODO: Readd security after I figure out how lettre works
+        SmtpClient::new("127.0.0.1:25",lettre::ClientSecurity::None).expect("Failed to construct SmtpClient"))
         .send(SendableEmail::new(
             Envelope::new(
                 Some(EmailAddress::new("noreply@handofcthulhu.com".to_owned()).unwrap()),
