@@ -211,6 +211,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         .load::<db_tables::DbEnvNames>(&con).expect("Env names query not working");
 
     item.announcements = Announcements::table
+        .filter(Announcements::displayed.eq(true))
         .load::<AnnouncementDb>(&con).expect("Announcement query not working");
 
     item.services = {
