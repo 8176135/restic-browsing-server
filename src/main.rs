@@ -1,7 +1,6 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 #![allow(proc_macro_derive_resolution_fallback)]
 
-
 #[macro_use]
 extern crate rocket;
 extern crate rocket_contrib;
@@ -16,6 +15,7 @@ extern crate serde;
 extern crate lazy_static;
 
 extern crate dirs;
+extern crate time;
 
 mod helper;
 mod db_tables;
@@ -24,7 +24,7 @@ mod account_management;
 mod repository_mods;
 
 use rocket::response::{Redirect, Flash, status::NotFound};
-use rocket::request::{self, Form, FlashMessage, FromRequest, Request};
+use rocket::request::{self, FlashMessage, FromRequest, Request};
 use rocket::http::{Cookie, Cookies, Status};
 
 use rocket_contrib::{templates::Template, json::Json};
@@ -35,19 +35,6 @@ use std::sync::Mutex;
 use serde::Serialize;
 use diesel::prelude::*;
 use rocket::response::NamedFile;
-
-#[derive(FromForm)]
-struct Login {
-    username: String,
-    password: String,
-}
-
-#[derive(FromForm)]
-struct Registration {
-    username: String,
-    password: String,
-    email: String,
-}
 
 #[derive(Debug, Serialize)]
 pub struct SharedPageData {
@@ -75,16 +62,17 @@ const SIZE_CAP_KILOBYTES: i32 = 100 * 1000;
 lazy_static! {
     static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<(String,i64)>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
+    static ref MAX_COOKIE_AGE: time::Duration = time::Duration::days(1);
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for User {
     type Error = ();
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
         use rocket::Outcome;
-
-        let encryption_password = request.cookies().get_private("repo_encryption_password")
+        let mut cookies = request.cookies();
+        let encryption_password = cookies.get_private("repo_encryption_password")
             .and_then(|cookie| cookie.value().parse().ok());
-        let id = request.cookies().get_private("user_id")
+        let id = cookies.get_private("user_id")
             .and_then(|cookie| cookie.value().parse().ok());
 
         if encryption_password.is_none() || id.is_none() {
@@ -96,46 +84,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
             })
         }
     }
-}
-
-#[post("/login", data = "<login>")]
-fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
-    use db_tables::Users;
-
-    let con = helper::est_db_con();
-    let login_candidate: Option<db_tables::DbUserLogin> =
-        Users::dsl::Users.filter(Users::username.eq(&login.username.to_lowercase()))
-            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code))
-            .load::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db").first().cloned();
-
-    if let Some(login_candidate) = login_candidate {
-        if helper::verify_user(&login_candidate, &login.password) {
-            if login_candidate.activation_code.is_some() {
-                Flash::error(Redirect::to("/login"), "Please activate your account (check your spam box too)!")
-            } else {
-                cookies.add_private(Cookie::new("user_id", login_candidate.id.to_string()));
-                cookies.add_private(Cookie::new("repo_encryption_password",
-                                                helper::decrypt_base64(
-                                                    &login_candidate.enced_enc_pass,
-                                                    &login.password,
-                                                    &login_candidate.salt)));
-                Flash::success(Redirect::to("/"), "Successfully logged in.")
-            }
-        } else {
-            Flash::error(Redirect::to("/login/"), "Username exists, invalid password though.")
-        }
-    } else {
-        Flash::error(Redirect::to("/login/"), "Invalid username, register with the link below!.")
-    }
-}
-
-#[get("/login", rank = 2)]
-fn login_page(flash: Option<FlashMessage>) -> Template {
-    let mut context = HashMap::new();
-    if let Some(ref msg) = flash {
-        context.insert("flash", msg.msg());
-    }
-    Template::render("login", context)
 }
 
 #[get("/login")]
@@ -230,13 +178,12 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         }).collect()
     };
 
-
     Template::render("index", &item)
 }
 
 #[get("/bucket/<_folder_name>", rank = 2)]
 fn get_bucket_not_logged(_folder_name: String) -> Redirect {
-    Redirect::to("/")
+    Redirect::to("/login")
 }
 
 #[post("/preview/<repo_name>")]
@@ -457,61 +404,10 @@ fn index() -> Redirect {
     Redirect::to("/login/")
 }
 
-#[get("/register")]
-fn register(flash: Option<FlashMessage>) -> Template {
-    let mut context = HashMap::new();
-    if let Some(ref msg) = flash {
-        context.insert("flash", msg.msg());
-        context.insert("status", msg.name());
-    }
-    Template::render("signup", context)
-}
-
-#[post("/register_submit", data = "<registration>")]
-fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
-    if !helper::check_email_domain(&registration.email) {
-        return Flash::error(Redirect::to("/register/"), "Error, temporary emails can't be used sorry.");
-    }
-    let con = helper::est_db_con();
-    let (password, salt) = helper::encrypt_password(&registration.password);
-
-    let enc = helper::get_random_stuff(32);
-
-    let act_code = base64::encode_config(&base64::decode(&helper::get_random_stuff(64)).unwrap(), base64::URL_SAFE_NO_PAD);
-    ;
-
-    let register_insert_res = diesel::insert_into(db_tables::Users::table)
-        .values(&db_tables::DbUserIns {
-            email: registration.email.to_lowercase().clone(),
-            username: registration.username.to_lowercase().clone(),
-            enced_enc_pass: helper::encrypt_base64(&enc, &registration.password, &salt),
-            password,
-            salt,
-            activation_code: Some(act_code.clone()),
-        }).execute(&con);
-
-    use helper::IsUnique::*;
-    match helper::check_for_unique_error(register_insert_res).expect("Unexpected error in registration") {
-        Unique(_) => {
-            helper::send_email(&registration.email, "Account Activation - Restic Restorer",
-                               &format!("Hello {name}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: https://res.handofcthulhu.com/verify/{name}/{code}",
-                                        name=registration.username, code=act_code)).expect("Failed to send email");
-            Flash::success(Redirect::to("/login/"), "Successfully Registered, check your email for the link to activate your account.")
-        }
-        NonUnique(ref msg) => match msg.clone().as_str() {
-            "email_UNIQUE" => Flash::error(Redirect::to("/register/"), "Email has already been registered, try (Forgot Your Password)?"),
-            "username_UNIQUE" => Flash::error(Redirect::to("/register/"), "Username already taken!"),
-           _ => panic!("New registration constraint not implemented")
-        },
-        //_ => panic!("Non unique is not providing message"),
-    }
-}
-
 #[post("/retrieve/service/<service_name>")]
 fn retrieve_service_data(user: User, service_name: String) -> Json<ServiceData> {
     use db_tables::{BasesList, DbBasesListReturn};
     // `line` is of type `Result<String, Error>`
-
     let data: DbBasesListReturn = BasesList::table.select((BasesList::env_name_ids, BasesList::encrypted_env_values, BasesList::enc_addr_part))
         .filter(BasesList::service_name.eq(service_name))
         .filter(BasesList::owning_user.eq(user.id))
@@ -533,37 +429,6 @@ fn files(file: std::path::PathBuf) -> Option<NamedFile> {
     NamedFile::open(std::path::Path::new("public/").join(file)).ok()
 }
 
-#[get("/verify/<username>/<auth_code>")]
-fn verify_email(username: String, auth_code: String) -> Flash<Redirect> {
-    use db_tables::Users;
-
-    #[derive(AsChangeset)]
-    #[table_name = "Users"]
-    #[changeset_options(treat_none_as_null = "true")]
-    struct NullifyActCode {
-        activation_code: Option<String>
-    }
-
-    let con = helper::est_db_con();
-    let db_act_code = Users::table.filter(Users::username.eq(&username))
-        .select(Users::activation_code)
-        .first::<Option<String>>(&con).unwrap();
-
-    if let Some(db_act_code) = db_act_code {
-        if db_act_code == auth_code {
-            diesel::update(Users::table.filter(Users::username.eq(&username)))
-                .set(NullifyActCode { activation_code: None })
-                .execute(&con)
-                .expect("Removing activation code failed");
-            Flash::success(Redirect::to("/login"), "Account activated! Log in with your password.")
-        } else {
-            Flash::error(Redirect::to("/login"), "Invalid activation code")
-        }
-    } else {
-        Flash::success(Redirect::to("/login"), "Account already activated! Just log in with your password.")
-    }
-}
-
 fn main() {
     rocket::ignite()
         .attach(Template::custom(|engines| {
@@ -571,9 +436,9 @@ fn main() {
             engines.handlebars.register_helper("to_uppercase", Box::new(handlebar_helpers::to_upper_helper));
         }))
         .mount("/",
-               routes![index, logout, user_index, login_page, already_logged_in
-               ,login, get_bucket_data, get_bucket_not_logged, download_data, register,
-               register_submit, repository_mods::add_more_repos, repository_mods::add_more_services, repository_mods::edit_service, repository_mods::edit_repo, repository_mods::delete_repo, repository_mods::delete_service, repository_mods::add_b2_preset,
-               account_management::edit_account, account_management::edit_account_no_login, account_management::change_username, account_management::change_email,
-               account_management::change_password, logout_no_login, files, preview_command,retrieve_service_data,verify_email]).launch();
+               routes![index, logout, user_index, account_management::login_page, already_logged_in
+               ,account_management::login, get_bucket_data, get_bucket_not_logged, download_data, account_management::register,
+               account_management::register_submit, repository_mods::add_more_repos, repository_mods::add_more_services, repository_mods::edit_service, repository_mods::edit_repo, repository_mods::delete_repo, repository_mods::delete_service, repository_mods::add_b2_preset,
+               account_management::edit_account, account_management::edit_account_no_login, account_management::change_username, account_management::change_email, account_management::act_email_change, account_management::act_email_change_post,
+               account_management::change_password, logout_no_login, files, preview_command,retrieve_service_data, account_management::verify_email]).launch();
 }

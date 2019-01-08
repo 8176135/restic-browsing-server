@@ -120,6 +120,7 @@ pub struct DbUserLogin {
     pub salt: String,
     pub enced_enc_pass: String,
     pub activation_code: Option<String>,
+    pub email: String,
 }
 
 #[derive(Queryable, Debug, Clone, Serialize)]

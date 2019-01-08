@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account Email Correction - Restic Restorer</title>
+    <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="/public/css/main.css">
+    <link rel="stylesheet" href="/public/css/signup.css">
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="/public/js/jquery-3.3.1.min.js"><\/script>')</script>
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</head>
+<body>
+<h2>Account Email Correction</h2>
+<form action="/act_email_change/{{url_encode username}}" method="post">
+    <div>Username: <span style="font-size: 14pt;"><i>{{username}}</i></span></div><br>
+    <div class="input-field">
+        <input type="password" name="password" id="password" class="validate" minlength="6" autocomplete="off" value="" required>
+        <label for="password">Password</label>
+    </div>
+    <div class="input-field">
+        <input type="email" name="new_email" id="email" class="validate" maxlength="100" required>
+        <label for="email">New Email</label>
+    </div>
+    <div class="bot_row">
+        <a href="/login/" id="back_btn">
+            <button class="btn waves-effect waves-dark red darken-2" type="button">Login Page
+                <i class="material-icons left">keyboard_arrow_left</i>
+            </button>
+        </a>
+        <button class="btn waves-effect waves-dark green darken-2" type="submit" id="form_submit_btn">
+            <i class="material-icons right">send</i>Update email
+        </button>
+    </div>
+
+</form>
+{{#if flash}}
+    <div class="message_popup modal">
+        <div class="modal-content white-text {{status}}">
+            <h4>{{to_uppercase status}}</h4>
+            {{flash}}
+        </div>
+        <div class="modal-footer grey darken-1">
+            <button class="waves-effect waves-dark btn modal-close" type="submit">Close<i class="material-icons right">close</i></button>
+        </div>
+    </div>
+{{/if}}
+<script>
+    $(document).ready(function () {
+        $('.modal').modal();
+        $('.message_popup').modal("open");
+    });
+</script>
+</body>
+</html>
