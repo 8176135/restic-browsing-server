@@ -262,6 +262,8 @@ pub fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
                 } else {
                     cookies.add_private(Cookie::build("user_id", login_candidate.id.to_string())
                         .max_age(crate::MAX_COOKIE_AGE.clone())
+                        .secure(true)
+                        .http_only(true)
                         .finish());
                     cookies.add_private(Cookie::build("repo_encryption_password",
                                                       helper::decrypt_base64(
@@ -269,6 +271,8 @@ pub fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
                                                           &login.password,
                                                           &login_candidate.salt))
                         .max_age(crate::MAX_COOKIE_AGE.clone())
+                        .secure(true)
+                        .http_only(true)
                         .finish());
                     Flash::success(Redirect::to("/"), "Successfully logged in.")
                 }
