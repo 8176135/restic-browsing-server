@@ -10,11 +10,13 @@ extern crate diesel;
 
 #[macro_use]
 extern crate serde;
+extern crate serde_json;
 
 #[macro_use]
 extern crate lazy_static;
 
 extern crate dirs;
+extern crate chrono;
 extern crate time;
 
 mod helper;
@@ -49,6 +51,13 @@ struct ServiceData {
     env_var_names_list: Vec<i32>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SessionClientData {
+    auth_pass: String,
+    //    user_id: i32,
+    enc_id: i32,
+}
+
 #[derive(Debug, Clone)]
 pub struct User {
     pub id: i32,
@@ -56,13 +65,15 @@ pub struct User {
 }
 
 const TEMP_STORAGE_PATH: &str = "temp_download/";
+const SESSION_CLIENT_DATA_COOKIE_NAME: &str = "session_client_data";
+const SESSION_CLIENT_DATA_DB_AGE_HOURS: i64 = 24;
 const SIZE_CAP_KILOBYTES: i32 = 100 * 1000;
 //const RESTIC_CACHE_PATH: &str = ".cache/restic/";
 
 lazy_static! {
     static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<(String,i64)>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
-    static ref MAX_COOKIE_AGE: time::Duration = time::Duration::days(1);
+//    static ref MAX_COOKIE_AGE: time::Duration = time::Duration::days(1);
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for User {
@@ -70,18 +81,33 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
         use rocket::Outcome;
         let mut cookies = request.cookies();
-        let encryption_password = cookies.get_private("repo_encryption_password")
-            .and_then(|cookie| cookie.value().parse().ok());
-        let id = cookies.get_private("user_id")
-            .and_then(|cookie| cookie.value().parse().ok());
-
-        if encryption_password.is_none() || id.is_none() {
-            Outcome::Forward(())
+        let session_client_data = cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME);
+//            .and_then(|cookie| cookie.value().parse::<String>().ok());
+        if let Some(mut session_client_cookie) = session_client_data {
+            let session_client_data: SessionClientData = serde_json::from_str(&session_client_cookie.value().parse::<String>().unwrap()).expect("Failed to deserialize session data");
+            let con = helper::est_db_con();
+            use db_tables::{Users, AuthRepoPasswords, AuthRepoPasswordsDb};
+            match AuthRepoPasswords::table.select((AuthRepoPasswords::owning_user, AuthRepoPasswords::auth_repo_enc_pass, AuthRepoPasswords::expiry_date))
+                .filter(AuthRepoPasswords::id.eq(session_client_data.enc_id))
+                .first::<AuthRepoPasswordsDb>(&con) {
+                Ok(auth_repo) => {
+                    diesel::update(AuthRepoPasswords::table.filter(AuthRepoPasswords::id.eq(session_client_data.enc_id)))
+                        .set(AuthRepoPasswords::expiry_date.eq(chrono::Utc::now().naive_local() + chrono::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS)))
+                        .execute(&con);
+                    session_client_cookie.set_max_age(time::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS));
+                    cookies.add_private(session_client_cookie);
+                    Outcome::Success(User {
+                        id: auth_repo.owning_user,
+                        encryption_password: helper::decrypt(&auth_repo.auth_repo_enc_pass, &session_client_data.auth_pass),
+                    })
+                }
+                Err(ref err) if err == &diesel::result::Error::NotFound => {
+                    Outcome::Forward(())
+                }
+                _ => panic!("Can't connect to db")
+            }
         } else {
-            Outcome::Success(User {
-                id: id.unwrap(),
-                encryption_password: encryption_password.unwrap(),
-            })
+            Outcome::Forward(())
         }
     }
 }
@@ -93,7 +119,7 @@ fn already_logged_in(_user: User) -> Redirect {
 
 #[get("/")]
 fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
-    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList, Announcements,AnnouncementDb};
+    use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList, Announcements, AnnouncementDb};
 
     #[derive(Serialize, Queryable)]
     struct ConInfoData {
@@ -120,7 +146,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         service_type: Vec<db_tables::DbServiceType>,
         services: Vec<ServiceData>,
         shared_data: SharedPageData,
-        announcements: Vec<AnnouncementDb>
+        announcements: Vec<AnnouncementDb>,
     }
 
     let (flash, status) = match flash {
@@ -143,7 +169,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
             used_kilobytes: helper::get_used_kilos(&con, user.id),
             total_kilobytes: SIZE_CAP_KILOBYTES,
         },
-        announcements: Vec::new()
+        announcements: Vec::new(),
     };
 
     item.configs = ConnectionInfo::dsl::ConnectionInfo.inner_join(Services::table)
@@ -389,8 +415,17 @@ fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) ->
 
 #[post("/logout")]
 fn logout(_user: User, mut cookies: Cookies) -> Flash<Redirect> {
-    cookies.remove_private(Cookie::named("user_id"));
-    cookies.remove_private(Cookie::named("repo_encryption_password"));
+//    let session_client_data = cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME).unwrap().value().parse().unwrap();
+//    let session_client_data: SessionClientData = serde_json::from_str(session_client_data).unwrap();
+    diesel::delete(
+        db_tables::AuthRepoPasswords::table.filter(db_tables::AuthRepoPasswords::id.eq(
+            serde_json::from_str::<SessionClientData>(
+                &cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME).unwrap().value().parse::<String>().unwrap())
+                .unwrap().enc_id)))
+        .execute(&helper::est_db_con())
+        .expect("Failed to connect to server");
+
+    cookies.remove_private(Cookie::named("SESSION_CLIENT_DATA_COOKIE_NAME"));
     Flash::success(Redirect::to("/login/"), "Successfully logged out.")
 }
 

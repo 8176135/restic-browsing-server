@@ -260,20 +260,34 @@ pub fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
                                          login_candidate.email,
                                          base64::encode_config(&login.username, base64::URL_SAFE_NO_PAD)))
                 } else {
-                    cookies.add_private(Cookie::build("user_id", login_candidate.id.to_string())
-                        .max_age(crate::MAX_COOKIE_AGE.clone())
-                        .secure(true)
-                        .http_only(true)
-                        .finish());
-                    cookies.add_private(Cookie::build("repo_encryption_password",
-                                                      helper::decrypt_base64(
-                                                          &login_candidate.enced_enc_pass,
-                                                          &login.password,
-                                                          &login_candidate.salt))
-                        .max_age(crate::MAX_COOKIE_AGE.clone())
-                        .secure(true)
-                        .http_only(true)
-                        .finish());
+                    let random_stuff = helper::get_random_stuff(32);
+                    diesel::insert_into(db_tables::AuthRepoPasswords::table).values(&db_tables::AuthRepoPasswordsDb {
+                        expiry_date: chrono::Utc::now().naive_local() + chrono::Duration::days(crate::SESSION_CLIENT_DATA_DB_AGE_HOURS),
+                        owning_user: login_candidate.id,
+                        auth_repo_enc_pass: helper::encrypt(&helper::decrypt_base64(
+                            &login_candidate.enced_enc_pass,
+                            &login.password,
+                            &login_candidate.salt), &random_stuff),
+                    }).execute(&con).expect("Failed to insert, db connection problem?");
+
+                    let last_id: i32 = diesel::select(db_tables::last_insert_id).first(&con).unwrap();
+
+                    cookies.add_private(
+                        Cookie::build(crate::SESSION_CLIENT_DATA_COOKIE_NAME,
+                                      serde_json::to_string(&crate::SessionClientData { auth_pass: random_stuff, enc_id: last_id }).unwrap())
+                            .secure(if cfg!(debug_assertions) { false } else { true })
+                            .http_only(true)
+                            .max_age(time::Duration::days(1))
+                            .finish());
+//                    cookies.add_private(Cookie::build("repo_encryption_password",
+//                                                      helper::decrypt_base64(
+//                                                          &login_candidate.enced_enc_pass,
+//                                                          &login.password,
+//                                                          &login_candidate.salt))
+//                        .max_age(crate::MAX_COOKIE_AGE.clone())
+//                        .secure(true)
+//                        .http_only(true)
+//                        .finish());
                     Flash::success(Redirect::to("/"), "Successfully logged in.")
                 }
             } else {
@@ -302,7 +316,7 @@ pub fn act_email_change(username: String, flash: Option<FlashMessage>) -> Result
     struct ActivationEmailContext {
         username: String,
         flash: Option<String>,
-        status: Option<String>
+        status: Option<String>,
     }
 
     let (flash, status) = match flash {
@@ -321,7 +335,7 @@ pub fn act_email_change(username: String, flash: Option<FlashMessage>) -> Result
                 Ok(Template::render("activation_email_change", ActivationEmailContext {
                     username,
                     flash,
-                    status
+                    status,
                 }))
             } else {
                 Err(Status::NotAcceptable)

@@ -115,6 +115,7 @@ pub fn encrypt_base64(plain_txt: &str, password: &str, nonce: &str) -> String {
     base64::encode(&data)
 }
 
+// Adds one to the salt..?
 pub fn decrypt_base64(cipher_txt: &str, password: &str, nonce: &str) -> String {
     use self::ring::aead::CHACHA20_POLY1305;
 
@@ -171,7 +172,7 @@ pub fn decrypt(cipher_txt: &str, key: &str) -> String {
     let len = data.len();
     let (in_place, nonce) = data.split_at_mut(len - CHACHA20_POLY1305.nonce_len());
 
-    let out = ring::aead::open_in_place(&opening_key, nonce, &[], 0, in_place).expect("b");
+    let out = ring::aead::open_in_place(&opening_key, nonce, &[], 0, in_place).expect("decryption failed");
     String::from_utf8_lossy(out).to_string()
 }
 
