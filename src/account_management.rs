@@ -4,8 +4,60 @@ use crate::{helper, db_tables};
 use rocket_contrib::templates::Template;
 use rocket::response::{Redirect, Flash};
 use rocket::http::{Cookie, Cookies, Status};
-use rocket::request::{Form, FlashMessage};
+use rocket::request::{Form, FlashMessage, FromRequest, Request, Outcome};
 use diesel::prelude::*;
+
+const SESSION_CLIENT_DATA_COOKIE_NAME: &str = "session_client_data";
+const SESSION_CLIENT_DATA_DB_AGE_HOURS: i64 = 24;
+
+#[derive(Debug, Clone)]
+pub struct User {
+    pub id: i32,
+    pub encryption_password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SessionClientData {
+    auth_pass: String,
+    //    user_id: i32,
+    enc_id: i32,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for User {
+    type Error = ();
+    fn from_request(request: &'a Request<'r>) -> rocket::request::Outcome<User, ()> {
+        use rocket::Outcome;
+        let mut cookies = request.cookies();
+        let session_client_data = cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME);
+//            .and_then(|cookie| cookie.value().parse::<String>().ok());
+        if let Some(mut session_client_cookie) = session_client_data {
+            let session_client_data: SessionClientData = serde_json::from_str(&session_client_cookie.value().parse::<String>().unwrap()).expect("Failed to deserialize session data");
+            let con = helper::est_db_con();
+            use db_tables::{Users, AuthRepoPasswords, AuthRepoPasswordsDb};
+            match AuthRepoPasswords::table.select((AuthRepoPasswords::owning_user, AuthRepoPasswords::auth_repo_enc_pass, AuthRepoPasswords::expiry_date))
+                .filter(AuthRepoPasswords::id.eq(session_client_data.enc_id))
+                .first::<AuthRepoPasswordsDb>(&con) {
+                Ok(auth_repo) => {
+                    diesel::update(AuthRepoPasswords::table.filter(AuthRepoPasswords::id.eq(session_client_data.enc_id)))
+                        .set(AuthRepoPasswords::expiry_date.eq(chrono::Utc::now().naive_local() + chrono::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS)))
+                        .execute(&con);
+                    session_client_cookie.set_max_age(time::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS));
+                    cookies.add_private(session_client_cookie);
+                    Outcome::Success(User {
+                        id: auth_repo.owning_user,
+                        encryption_password: helper::decrypt(&auth_repo.auth_repo_enc_pass, &session_client_data.auth_pass),
+                    })
+                }
+                Err(ref err) if err == &diesel::result::Error::NotFound => {
+                    Outcome::Forward(())
+                }
+                _ => panic!("Can't connect to db")
+            }
+        } else {
+            Outcome::Forward(())
+        }
+    }
+}
 
 #[get("/account")]
 pub fn edit_account(user: super::User, flash: Option<FlashMessage>) -> Template {
@@ -262,7 +314,7 @@ pub fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
                 } else {
                     let random_stuff = helper::get_random_stuff(32);
                     diesel::insert_into(db_tables::AuthRepoPasswords::table).values(&db_tables::AuthRepoPasswordsDb {
-                        expiry_date: chrono::Utc::now().naive_local() + chrono::Duration::days(crate::SESSION_CLIENT_DATA_DB_AGE_HOURS),
+                        expiry_date: chrono::Utc::now().naive_local() + chrono::Duration::days(SESSION_CLIENT_DATA_DB_AGE_HOURS),
                         owning_user: login_candidate.id,
                         auth_repo_enc_pass: helper::encrypt(&helper::decrypt_base64(
                             &login_candidate.enced_enc_pass,
@@ -273,8 +325,8 @@ pub fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
                     let last_id: i32 = diesel::select(db_tables::last_insert_id).first(&con).unwrap();
 
                     cookies.add_private(
-                        Cookie::build(crate::SESSION_CLIENT_DATA_COOKIE_NAME,
-                                      serde_json::to_string(&crate::SessionClientData { auth_pass: random_stuff, enc_id: last_id }).unwrap())
+                        Cookie::build(SESSION_CLIENT_DATA_COOKIE_NAME,
+                                      serde_json::to_string(&SessionClientData { auth_pass: random_stuff, enc_id: last_id }).unwrap())
                             .secure(if cfg!(debug_assertions) { false } else { true })
                             .http_only(true)
                             .max_age(time::Duration::days(1))
@@ -377,4 +429,20 @@ pub fn act_email_change_post(username: String, data: Form<ActEmailChangeForm>) -
     } else {
         Ok(Flash::error(Redirect::to("/act_email_change/".to_owned() + &base64::encode_config(&username, base64::URL_SAFE_NO_PAD)), "Wrong password, please try again"))
     }
+}
+
+#[post("/logout")]
+pub fn logout(_user: User, mut cookies: Cookies) -> Flash<Redirect> {
+//    let session_client_data = cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME).unwrap().value().parse().unwrap();
+//    let session_client_data: SessionClientData = serde_json::from_str(session_client_data).unwrap();
+    diesel::delete(
+        db_tables::AuthRepoPasswords::table.filter(db_tables::AuthRepoPasswords::id.eq(
+            serde_json::from_str::<SessionClientData>(
+                &cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME).unwrap().value().parse::<String>().unwrap())
+                .unwrap().enc_id)))
+        .execute(&helper::est_db_con())
+        .expect("Failed to connect to server");
+
+    cookies.remove_private(Cookie::named("SESSION_CLIENT_DATA_COOKIE_NAME"));
+    Flash::success(Redirect::to("/login/"), "Successfully logged out.")
 }

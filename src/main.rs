@@ -38,6 +38,8 @@ use serde::Serialize;
 use diesel::prelude::*;
 use rocket::response::NamedFile;
 
+use account_management::User;
+
 #[derive(Debug, Serialize)]
 pub struct SharedPageData {
     used_kilobytes: i32,
@@ -51,22 +53,7 @@ struct ServiceData {
     env_var_names_list: Vec<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SessionClientData {
-    auth_pass: String,
-    //    user_id: i32,
-    enc_id: i32,
-}
-
-#[derive(Debug, Clone)]
-pub struct User {
-    pub id: i32,
-    pub encryption_password: String,
-}
-
 const TEMP_STORAGE_PATH: &str = "temp_download/";
-const SESSION_CLIENT_DATA_COOKIE_NAME: &str = "session_client_data";
-const SESSION_CLIENT_DATA_DB_AGE_HOURS: i64 = 24;
 const SIZE_CAP_KILOBYTES: i32 = 100 * 1000;
 //const RESTIC_CACHE_PATH: &str = ".cache/restic/";
 
@@ -74,42 +61,6 @@ lazy_static! {
     static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<(String,i64)>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
 //    static ref MAX_COOKIE_AGE: time::Duration = time::Duration::days(1);
-}
-
-impl<'a, 'r> FromRequest<'a, 'r> for User {
-    type Error = ();
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<User, ()> {
-        use rocket::Outcome;
-        let mut cookies = request.cookies();
-        let session_client_data = cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME);
-//            .and_then(|cookie| cookie.value().parse::<String>().ok());
-        if let Some(mut session_client_cookie) = session_client_data {
-            let session_client_data: SessionClientData = serde_json::from_str(&session_client_cookie.value().parse::<String>().unwrap()).expect("Failed to deserialize session data");
-            let con = helper::est_db_con();
-            use db_tables::{Users, AuthRepoPasswords, AuthRepoPasswordsDb};
-            match AuthRepoPasswords::table.select((AuthRepoPasswords::owning_user, AuthRepoPasswords::auth_repo_enc_pass, AuthRepoPasswords::expiry_date))
-                .filter(AuthRepoPasswords::id.eq(session_client_data.enc_id))
-                .first::<AuthRepoPasswordsDb>(&con) {
-                Ok(auth_repo) => {
-                    diesel::update(AuthRepoPasswords::table.filter(AuthRepoPasswords::id.eq(session_client_data.enc_id)))
-                        .set(AuthRepoPasswords::expiry_date.eq(chrono::Utc::now().naive_local() + chrono::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS)))
-                        .execute(&con);
-                    session_client_cookie.set_max_age(time::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS));
-                    cookies.add_private(session_client_cookie);
-                    Outcome::Success(User {
-                        id: auth_repo.owning_user,
-                        encryption_password: helper::decrypt(&auth_repo.auth_repo_enc_pass, &session_client_data.auth_pass),
-                    })
-                }
-                Err(ref err) if err == &diesel::result::Error::NotFound => {
-                    Outcome::Forward(())
-                }
-                _ => panic!("Can't connect to db")
-            }
-        } else {
-            Outcome::Forward(())
-        }
-    }
 }
 
 #[get("/login")]
@@ -413,22 +364,6 @@ fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) ->
     Ok(inner)
 }
 
-#[post("/logout")]
-fn logout(_user: User, mut cookies: Cookies) -> Flash<Redirect> {
-//    let session_client_data = cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME).unwrap().value().parse().unwrap();
-//    let session_client_data: SessionClientData = serde_json::from_str(session_client_data).unwrap();
-    diesel::delete(
-        db_tables::AuthRepoPasswords::table.filter(db_tables::AuthRepoPasswords::id.eq(
-            serde_json::from_str::<SessionClientData>(
-                &cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME).unwrap().value().parse::<String>().unwrap())
-                .unwrap().enc_id)))
-        .execute(&helper::est_db_con())
-        .expect("Failed to connect to server");
-
-    cookies.remove_private(Cookie::named("SESSION_CLIENT_DATA_COOKIE_NAME"));
-    Flash::success(Redirect::to("/login/"), "Successfully logged out.")
-}
-
 #[post("/logout", rank = 2)]
 fn logout_no_login() -> Flash<Redirect> {
     Flash::error(Redirect::to("/login/"), "Can't logout, not logged in in the first place")
@@ -471,7 +406,7 @@ fn main() {
             engines.handlebars.register_helper("to_uppercase", Box::new(handlebar_helpers::to_upper_helper));
         }))
         .mount("/",
-               routes![index, logout, user_index, account_management::login_page, already_logged_in
+               routes![index, account_management::logout, user_index, account_management::login_page, already_logged_in
                ,account_management::login, get_bucket_data, get_bucket_not_logged, download_data, account_management::register,
                account_management::register_submit, repository_mods::add_more_repos, repository_mods::add_more_services, repository_mods::edit_service, repository_mods::edit_repo, repository_mods::delete_repo, repository_mods::delete_service, repository_mods::add_b2_preset,
                account_management::edit_account, account_management::edit_account_no_login, account_management::change_username, account_management::change_email, account_management::act_email_change, account_management::act_email_change_post,
