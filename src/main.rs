@@ -406,9 +406,38 @@ fn main() {
             engines.handlebars.register_helper("to_uppercase", Box::new(handlebar_helpers::to_upper_helper));
         }))
         .mount("/",
-               routes![index, account_management::logout, user_index, account_management::login_page, already_logged_in
-               ,account_management::login, get_bucket_data, get_bucket_not_logged, download_data, account_management::register,
-               account_management::register_submit, repository_mods::add_more_repos, repository_mods::add_more_services, repository_mods::edit_service, repository_mods::edit_repo, repository_mods::delete_repo, repository_mods::delete_service, repository_mods::add_b2_preset,
-               account_management::edit_account, account_management::edit_account_no_login, account_management::change_username, account_management::change_email, account_management::act_email_change, account_management::act_email_change_post,
-               account_management::change_password, logout_no_login, files, preview_command,retrieve_service_data, account_management::verify_email]).launch();
+               routes![
+                    index,
+                    user_index,
+                    already_logged_in,
+                    get_bucket_data,
+                    get_bucket_not_logged,
+                    download_data,
+                    logout_no_login,
+                    files,
+                    preview_command,
+                    retrieve_service_data,
+
+                    account_management::logout,
+                    account_management::login_page,
+                    account_management::login,
+                    account_management::register,
+                    account_management::register_submit,
+                    account_management::edit_account,
+                    account_management::edit_account_no_login,
+                    account_management::change_username,
+                    account_management::change_email,
+                    account_management::act_email_change,
+                    account_management::act_email_change_post,
+                    account_management::change_password,
+                    account_management::verify_email,
+
+                    repository_mods::add_more_repos,
+                    repository_mods::add_more_services,
+                    repository_mods::edit_service,
+                    repository_mods::edit_repo,
+                    repository_mods::delete_repo,
+                    repository_mods::delete_service,
+                    repository_mods::add_b2_preset
+                    ]).launch();
 }

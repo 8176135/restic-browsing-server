@@ -5,13 +5,13 @@
  Source Server Type    : MariaDB
  Source Server Version : 100137
  Source Host           : localhost:3306
- Source Schema         : DuplicatiOnlineAccounts
+ Source Schema         : ResticOnlineAccounts
 
  Target Server Type    : MariaDB
  Target Server Version : 100137
  File Encoding         : 65001
 
- Date: 06/01/2019 11:25:37
+ Date: 29/01/2019 20:42:32
 */
 
 SET NAMES utf8mb4;
@@ -28,6 +28,20 @@ CREATE TABLE `Announcements`  (
   `contents` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Compact;
+
+-- ----------------------------
+-- Table structure for AuthRepoPasswords
+-- ----------------------------
+DROP TABLE IF EXISTS `AuthRepoPasswords`;
+CREATE TABLE `AuthRepoPasswords`  (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `owning_user` int(10) UNSIGNED NOT NULL,
+  `auth_repo_enc_pass` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expiry_date` datetime(0) NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `arp_ou_fk`(`owning_user`) USING BTREE,
+  CONSTRAINT `arp_ou_fk` FOREIGN KEY (`owning_user`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
 -- Table structure for ConnectionInfo
@@ -112,14 +126,14 @@ CREATE TABLE `Users`  (
   `username` varchar(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `email` varchar(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL,
   `password` char(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
-  `salt` varchar(32) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL,
+  `salt` varchar(32) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `enced_enc_pass` char(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `kilobytes_downloaded` int(10) NOT NULL DEFAULT 0,
   `activation_code` varchar(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `username_UNIQUE`(`username`) USING BTREE,
   UNIQUE INDEX `email_UNIQUE`(`email`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- View structure for BasesList
@@ -165,6 +179,19 @@ BEGIN
 	
 	RETURN 0;
 END
+;;
+delimiter ;
+
+-- ----------------------------
+-- Event structure for ExpiredPassRemover
+-- ----------------------------
+DROP EVENT IF EXISTS `ExpiredPassRemover`;
+delimiter ;;
+CREATE EVENT `ExpiredPassRemover`
+ON SCHEDULE
+EVERY '1' DAY STARTS '2018-12-23 20:30:00'
+ON COMPLETION PRESERVE
+DO DELETE FROM AuthRepoPasswords WHERE AuthRepoPasswords.expiry_date < NOW()
 ;;
 delimiter ;
 
