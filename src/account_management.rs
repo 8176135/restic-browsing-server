@@ -1,6 +1,6 @@
 extern crate diesel;
 
-use crate::{helper, db_tables};
+use crate::{helper, db_tables, UserConInfo};
 use rocket_contrib::templates::Template;
 use rocket::response::{Redirect, Flash};
 use rocket::http::{Cookie, Cookies, Status};
@@ -40,7 +40,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 Ok(auth_repo) => {
                     diesel::update(AuthRepoPasswords::table.filter(AuthRepoPasswords::id.eq(session_client_data.enc_id)))
                         .set(AuthRepoPasswords::expiry_date.eq(chrono::Utc::now().naive_local() + chrono::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS)))
-                        .execute(&con);
+                        .execute(&con).expect("Failed to connect to db, or update failed");
                     session_client_cookie.set_max_age(time::Duration::hours(SESSION_CLIENT_DATA_DB_AGE_HOURS));
                     cookies.add_private(session_client_cookie);
                     Outcome::Success(User {
@@ -244,7 +244,7 @@ pub fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
     match helper::check_for_unique_error(register_insert_res).expect("Unexpected error in registration") {
         Unique(_) => {
             helper::send_email(&registration.email, "Account Activation - Restic Restorer",
-                               &format!("Hello {name}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)\nActivation link: https://res.handofcthulhu.com/verify/{name}/{code}",
+                               &format!("Hello {name}, use the link below into your url bar to activate your account \n\nActivation link: https://res.handofcthulhu.com/verify/{name}/{code}",
                                         name = registration.username, code = act_code)).expect("Failed to send email");
             Flash::success(Redirect::to("/login/"), "Successfully Registered, check your email for the link to activate your account.")
         }
@@ -295,8 +295,17 @@ pub struct Login {
 }
 
 #[post("/login", data = "<login>")]
-pub fn login(mut cookies: Cookies, login: Form<Login>) -> Flash<Redirect> {
+pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) -> Flash<Redirect> {
     use db_tables::Users;
+    println!("{:?}", con_info);
+    {
+        let mut guard = crate::CONNECTION_TRACKER.lock().unwrap();
+        let entry = guard.entry(con_info.ip.clone()).or_default();
+        if *entry > crate::MAX_CON_PER_MINUTE_PER_IP {
+            return Flash::error(Redirect::to("/login"), "Too many attempts from your IP, please wait a bit");
+        }
+        *entry += 1;
+    }
 
     let con = helper::est_db_con();
     let login_candidate: Result<db_tables::DbUserLogin, diesel::result::Error> =

@@ -108,7 +108,6 @@ allow_tables_to_appear_in_same_query!(ConnectionInfo, Users);
 allow_tables_to_appear_in_same_query!(ConnectionInfo, Services);
 
 use diesel::sql_types::{Integer, Text, Nullable};
-use std::time::SystemTime;
 sql_function!(fn update_repositories(service_name: Text, owning_user: Integer, repo_name: Text, old_repo_name: Text, newPath: Text, encryption_password: Nullable<Text>) -> Integer);
 
 #[derive(Queryable,Insertable, Debug)]

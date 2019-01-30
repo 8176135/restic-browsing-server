@@ -26,13 +26,14 @@ mod account_management;
 mod repository_mods;
 
 use rocket::response::{Redirect, Flash, status::NotFound};
-use rocket::request::{self, FlashMessage, FromRequest, Request};
-use rocket::http::{Cookie, Cookies, Status};
+use rocket::request::{FlashMessage, FromRequest, Request};
+use rocket::http::Status;
 
 use rocket_contrib::{templates::Template, json::Json};
 
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::net::IpAddr;
 
 use serde::Serialize;
 use diesel::prelude::*;
@@ -46,6 +47,18 @@ pub struct SharedPageData {
     total_kilobytes: i32,
 }
 
+#[derive(Debug)]
+pub struct UserConInfo {
+    ip: IpAddr,
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for UserConInfo {
+    type Error = ();
+    fn from_request(request: &'a Request<'r>) -> rocket::request::Outcome<UserConInfo, ()> {
+        rocket::Outcome::Success(UserConInfo { ip: request.client_ip().expect("Nginx not passing real-ip?") })
+    }
+}
+
 #[derive(Debug, Serialize)]
 struct ServiceData {
     enc_addr_part: String,
@@ -55,11 +68,14 @@ struct ServiceData {
 
 const TEMP_STORAGE_PATH: &str = "temp_download/";
 const SIZE_CAP_KILOBYTES: i32 = 100 * 1000;
+const MAX_CON_PER_MINUTE_PER_IP: u8 = 15;
 //const RESTIC_CACHE_PATH: &str = ".cache/restic/";
 
 lazy_static! {
     static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<(String,i64)>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
+    static ref CONNECTION_TRACKER: Mutex<HashMap<IpAddr, u8>> = Mutex::new(HashMap::new());
+
 //    static ref MAX_COOKIE_AGE: time::Duration = time::Duration::days(1);
 }
 
@@ -400,6 +416,13 @@ fn files(file: std::path::PathBuf) -> Option<NamedFile> {
 }
 
 fn main() {
+    std::thread::spawn(move || {
+        loop {
+            { CONNECTION_TRACKER.lock().unwrap().clear(); }
+            std::thread::sleep(std::time::Duration::from_secs(60));
+        }
+    });
+
     rocket::ignite()
         .attach(Template::custom(|engines| {
             engines.handlebars.register_helper("url_encode", Box::new(handlebar_helpers::url_encode_helper));
