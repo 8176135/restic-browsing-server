@@ -1,4 +1,4 @@
-#RBS - Restic Browsing Server
+# RBS - Restic Browsing Server
 #### A server that allows you to download your files directly from the web
 
 
@@ -17,7 +17,7 @@ and when logged in you can just browse your files and download what you need any
 
 
 ## The Server
-####A live server is hosted here: https://rbs.handofcthulhu.com/
+#### A live server is hosted here: https://rbs.handofcthulhu.com/
 or you can host it on your own VPS by cloning this repository. You would need:
 1. Nightly build of `rust` (get it with `rustup`)
 2. `mariadb` or `mysql` server, with `restic_browser_structure.sql` imported as a database.
