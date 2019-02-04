@@ -97,7 +97,9 @@ label {
   //overflow: visible;
   white-space: nowrap;
 }
-
+.btn.full_width {
+  flex: 1 0 auto;
+}
 .footer .data_use {
   margin: auto;
   text-align: center;

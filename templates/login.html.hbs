@@ -5,7 +5,11 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-118638316-2"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
         gtag('js', new Date());
 
         gtag('config', 'UA-118638316-2');
@@ -26,8 +30,8 @@
 </head>
 <body>
 <div id="login_panel">
-    <form action="/login" method="post" accept-charset="utf-8">
-        <div class="center">
+    <form action="/login" method="post" accept-charset="utf-8" class="center">
+        <div class="line">
             <div class="input-field">
                 <input type="text" name="username" id="username" required>
                 <label for="username">Username</label>
@@ -37,12 +41,19 @@
                 <label for="password">Password</label>
             </div>
         </div>
+        <div class="line">
+            <div class="input-field">
+                <input type="text" name="two_factor_auth" id="two_factor_auth" placeholder="No 2FA" maxlength="6" minlength="6" pattern="\d*">
+                <label for="password">2FA Key</label>
+            </div>
+        </div>
         <button class="waves-effect waves-dark btn green darken-2 text-white" type="submit">Login
             <i class="material-icons right">keyboard_arrow_right</i></button>
 
         <a href="/register">
             <button type="button" class="waves-effect waves-dark btn red darken-2 text-white" style="margin-top: 10px;">
-                Register</button>
+                Register
+            </button>
         </a>
     </form>
 </div>
@@ -52,7 +63,26 @@
         {{{flash}}}
     </div>
 {{/if}}
+<script>
+    function setInputFilter(textbox, inputFilter) {
+        ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function (event) {
+            textbox.addEventListener(event, function () {
+                if (inputFilter(this.value)) {
+                    this.oldValue = this.value;
+                    this.oldSelectionStart = this.selectionStart;
+                    this.oldSelectionEnd = this.selectionEnd;
+                } else if (this.hasOwnProperty("oldValue")) {
+                    this.value = this.oldValue;
+                    this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+                }
+            });
+        });
+    }
 
+    setInputFilter(document.getElementById("two_factor_auth"), function (value) {
+        return /^\d*$/.test(value);
+    });
+</script>
 </body>
 
 </html>

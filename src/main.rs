@@ -18,6 +18,7 @@ extern crate lazy_static;
 extern crate dirs;
 extern crate chrono;
 extern crate time;
+extern crate ring;
 
 mod helper;
 mod db_tables;
@@ -454,6 +455,10 @@ fn main() {
                     account_management::act_email_change_post,
                     account_management::change_password,
                     account_management::verify_email,
+                    account_management::enable_2fa,
+                    account_management::disable_2fa,
+                    account_management::confirm_2fa,
+                    account_management::login_already_logged,
 
                     repository_mods::add_more_repos,
                     repository_mods::add_more_services,

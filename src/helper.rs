@@ -1,7 +1,6 @@
 extern crate walkdir;
 extern crate zip;
 
-extern crate ring;
 extern crate base64;
 extern crate diesel;
 extern crate regex;
@@ -19,6 +18,7 @@ use diesel::prelude::*;
 use std::process::Command;
 use std::sync::RwLock;
 use std::time::SystemTime;
+use ring::rand::{SystemRandom, SecureRandom};
 
 use self::regex::Regex;
 
@@ -27,6 +27,7 @@ const DATABASE_URL: &str = include_str!("../database_url");
 lazy_static! {
    static ref EMAIL_DOMAIN_CACHE: RwLock<(SystemTime, Vec<String>)> = RwLock::new((SystemTime::UNIX_EPOCH, Vec::new()));
    static ref DUPLICATE_KEY_MSG_SEPERATOR: Regex = Regex::new(r#"Duplicate entry '(.*?[^\\]?)' for key '(.*?[^\\]?)'"#).unwrap();
+   pub static ref SECURE_RANDOM_GEN: SystemRandom = ring::rand::SystemRandom::new();
 }
 
 pub fn zip_dir<T>(path: &str, writer: &mut T)
@@ -89,7 +90,7 @@ pub fn delete_dir_contents(read_dir_res: Result<std::fs::ReadDir, std::io::Error
 //pub fn encrypt(cipher_txt: &str, password: &str)
 
 pub fn encrypt_base64(plain_txt: &str, password: &str, nonce: &str) -> String {
-    use self::ring::aead::CHACHA20_POLY1305;
+    use ring::aead::CHACHA20_POLY1305;
 
     let mut nonce = base64::decode(&nonce).unwrap();
     let mut key = [0; 32];
@@ -117,7 +118,7 @@ pub fn encrypt_base64(plain_txt: &str, password: &str, nonce: &str) -> String {
 
 // Adds one to the salt..?
 pub fn decrypt_base64(cipher_txt: &str, password: &str, nonce: &str) -> String {
-    use self::ring::aead::CHACHA20_POLY1305;
+    use ring::aead::CHACHA20_POLY1305;
 
     let mut nonce = base64::decode(&nonce).unwrap();
     let mut key = [0; 32];
@@ -143,12 +144,12 @@ pub fn decrypt_base64(cipher_txt: &str, password: &str, nonce: &str) -> String {
 }
 
 pub fn encrypt(plain_txt: &str, key: &str) -> String {
-    use self::ring::rand::SecureRandom;
-    use self::ring::aead::CHACHA20_POLY1305;
+    use ring::rand::SecureRandom;
+    use ring::aead::CHACHA20_POLY1305;
 
     let key = base64::decode(key).unwrap();
     let mut nonce = vec![0u8; CHACHA20_POLY1305.nonce_len()];
-    ring::rand::SystemRandom::new().fill(&mut nonce).unwrap();
+    SECURE_RANDOM_GEN.fill(&mut nonce).unwrap();
     let sealing_key = ring::aead::SealingKey::new(&CHACHA20_POLY1305, &key).unwrap();
 
     let mut data = Vec::from(plain_txt.as_bytes());
@@ -161,7 +162,7 @@ pub fn encrypt(plain_txt: &str, key: &str) -> String {
 }
 
 pub fn decrypt(cipher_txt: &str, key: &str) -> String {
-    use self::ring::aead::CHACHA20_POLY1305;
+    use ring::aead::CHACHA20_POLY1305;
 
     let key = base64::decode(key).unwrap();
 
@@ -191,12 +192,12 @@ pub fn est_db_con() -> diesel::MysqlConnection {
 }
 
 pub fn encrypt_password(password: &str) -> (String, String) {
-    use self::ring::rand::SecureRandom;
+    use ring::rand::SecureRandom;
 
     let mut salt_buffer = Vec::new();
     let mut output = [0u8; ring::digest::SHA256_OUTPUT_LEN];
     salt_buffer.resize(16, 0u8);
-    ring::rand::SystemRandom::new().fill(salt_buffer.as_mut()).expect("Not generating random salt");
+    SECURE_RANDOM_GEN.fill(salt_buffer.as_mut()).expect("Not generating random salt");
     ring::pbkdf2::derive(&ring::digest::SHA256, 100_000, salt_buffer.as_ref(), password.as_bytes(), output.as_mut());
     (base64::encode(&output), base64::encode(&salt_buffer))
 }
@@ -241,12 +242,12 @@ pub fn get_used_kilos(con: &diesel::MysqlConnection, user_id: i32) -> i32 {
 }
 
 pub fn get_random_stuff(length: usize) -> String {
-    use self::ring::rand::SecureRandom;
+    use ring::rand::SecureRandom;
 
     let mut store: Vec<u8> = Vec::new();
     store.resize(length, 0u8);
 
-    ring::rand::SystemRandom::new().fill(store.as_mut()).unwrap();
+    SECURE_RANDOM_GEN.fill(store.as_mut()).unwrap();
 
     base64::encode(&store)
 }
@@ -315,7 +316,7 @@ pub fn send_email(email: &str, title: &str, contents: &str) -> Result<self::lett
 
     SmtpTransport::new(
         //TODO: Re-add security after I figure out how lettre works
-        SmtpClient::new("127.0.0.1:25",lettre::ClientSecurity::None).expect("Failed to construct SmtpClient"))
+        SmtpClient::new("127.0.0.1:25", lettre::ClientSecurity::None).expect("Failed to construct SmtpClient"))
         .send(SendableEmail::new(
             Envelope::new(
                 Some(EmailAddress::new("noreply@handofcthulhu.com".to_owned()).unwrap()),
@@ -328,6 +329,44 @@ pub fn send_email(email: &str, title: &str, contents: &str) -> Result<self::lett
 //
 //Hello {}, copy and paste the link below into your url bar to activate your account (I haven't figured out html emails yet)
 //Activation link: {}"#,).to_vec()
+}
+
+pub fn totp_check(secret: &[u8], guess: u32) -> bool {
+    totp_internal(secret, SystemTime::now(), std::time::Duration::from_secs(::account_management::TWO_FACTOR_AUTH_TIME_WINDOW as u64), ::account_management::TWO_FACTOR_AUTH_DIGITS, guess)
+}
+
+fn totp_internal(secret: &[u8], time: SystemTime, window_seconds: std::time::Duration, digits: u32, guess: u32) -> bool {
+    let counter = time.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() / window_seconds.as_secs();
+
+    let key = ring::hmac::SigningKey::new(&ring::digest::SHA1, secret);
+    (-1..=1).fold(false, |acc, offset| {
+        acc || {
+            let counter = (counter as i64 + offset) as u64;
+            let hmac_message: &[u8; 8] = &[
+                ((counter >> 56) & 0xff) as u8,
+                ((counter >> 48) & 0xff) as u8,
+                ((counter >> 40) & 0xff) as u8,
+                ((counter >> 32) & 0xff) as u8,
+                ((counter >> 24) & 0xff) as u8,
+                ((counter >> 16) & 0xff) as u8,
+                ((counter >> 8) & 0xff) as u8,
+                ((counter >> 0) & 0xff) as u8,
+            ];
+            println!("WOO: {}", offset);
+            let data = ring::hmac::sign(&key, hmac_message);
+            let data = data.as_ref();
+
+            let dynamic_offset = (data[data.len() - 1] & (0xf as u8)) as usize;
+
+            let truncated: u32 = (((data[dynamic_offset] as u32) & 0x7f) << 24
+                | (data[dynamic_offset + 1] as u32) << 16
+                | (data[dynamic_offset + 2] as u32) << 8
+                | (data[dynamic_offset + 3] as u32)
+            ) as u32 % 10u32.pow(digits);
+
+            truncated == guess
+        }
+    })
 }
 
 #[cfg(test)]

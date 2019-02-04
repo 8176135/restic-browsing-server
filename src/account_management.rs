@@ -9,6 +9,8 @@ use diesel::prelude::*;
 
 const SESSION_CLIENT_DATA_COOKIE_NAME: &str = "session_client_data";
 const SESSION_CLIENT_DATA_DB_AGE_HOURS: i64 = 24;
+pub const TWO_FACTOR_AUTH_TIME_WINDOW: u32 = 30;
+pub const TWO_FACTOR_AUTH_DIGITS: u32 = 6;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -19,7 +21,7 @@ pub struct User {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SessionClientData {
     auth_pass: String,
-    //    user_id: i32,
+    //  user_id: i32,
     enc_id: i32,
 }
 
@@ -60,12 +62,13 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 }
 
 #[get("/account")]
-pub fn edit_account(user: super::User, flash: Option<FlashMessage>) -> Template {
+pub fn edit_account(user: User, flash: Option<FlashMessage>) -> Template {
     use db_tables::Users;
     #[derive(Serialize)]
     struct AccountManagementData {
         pub username: String,
         pub email: String,
+        pub highlight_2fa: bool,
         pub flash: Option<String>,
         pub status: Option<String>,
     }
@@ -79,13 +82,14 @@ pub fn edit_account(user: super::User, flash: Option<FlashMessage>) -> Template 
 
     let output: db_tables::DbUserManagement =
         Users::dsl::Users.filter(Users::id.eq(user.id))
-            .select((Users::username, Users::email))
+            .select((Users::username, Users::email, Users::secret_2fa_enc))
             .first::<db_tables::DbUserManagement>(&con)
             .expect("Can't find user id in database (or connection failed). (Has the user been deleted manually while server is still running?)");
 
     Template::render("account", AccountManagementData {
         username: output.username.clone(),
         email: output.email.clone(),
+        highlight_2fa: output.secret_2fa_enc.is_none(),
         flash,
         status,
     })
@@ -159,7 +163,7 @@ pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Fl
 
     let login_candidate: db_tables::DbUserLogin =
         Users::dsl::Users.filter(Users::id.eq(user.id))
-            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email))
+            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email, Users::secret_2fa_enc))
             .first::<db_tables::DbUserLogin>(&con).expect("Failed to connect with db, or user deleted?");
     if helper::verify_user(&login_candidate, &new_password.old_password) {
         let _insert_result = diesel::update(Users::dsl::Users.filter(Users::id.eq(user.id)))
@@ -238,6 +242,7 @@ pub fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
             password,
             salt,
             activation_code: Some(act_code.clone()),
+            secret_2fa_enc: None,
         }).execute(&con);
 
     use helper::IsUnique::*;
@@ -292,11 +297,18 @@ pub fn verify_email(username: String, auth_code: String) -> Flash<Redirect> {
 pub struct Login {
     username: String,
     password: String,
+    two_factor_auth: String,
+}
+
+#[post("/login", rank = 2)]
+pub fn login_already_logged(user: User) -> Flash<Redirect> {
+    Flash::error(Redirect::to("/"), "Already logged in")
 }
 
 #[post("/login", data = "<login>")]
 pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) -> Flash<Redirect> {
     use db_tables::Users;
+    use ::std::time::{SystemTime, Duration};
     println!("{:?}", con_info);
     {
         let mut guard = crate::CONNECTION_TRACKER.lock().unwrap();
@@ -310,7 +322,7 @@ pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) ->
     let con = helper::est_db_con();
     let login_candidate: Result<db_tables::DbUserLogin, diesel::result::Error> =
         Users::dsl::Users.filter(Users::username.eq(&login.username.to_lowercase()))
-            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email))
+            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email, Users::secret_2fa_enc))
             .first::<db_tables::DbUserLogin>(&con);
     match login_candidate {
         Ok(login_candidate) => {
@@ -321,25 +333,16 @@ pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) ->
                                          login_candidate.email,
                                          base64::encode_config(&login.username, base64::URL_SAFE_NO_PAD)))
                 } else {
-                    let random_stuff = helper::get_random_stuff(32);
-                    diesel::insert_into(db_tables::AuthRepoPasswords::table).values(&db_tables::AuthRepoPasswordsDb {
-                        expiry_date: chrono::Utc::now().naive_local() + chrono::Duration::days(SESSION_CLIENT_DATA_DB_AGE_HOURS),
-                        owning_user: login_candidate.id,
-                        auth_repo_enc_pass: helper::encrypt(&helper::decrypt_base64(
-                            &login_candidate.enced_enc_pass,
-                            &login.password,
-                            &login_candidate.salt), &random_stuff),
-                    }).execute(&con).expect("Failed to insert, db connection problem?");
-
-                    let last_id: i32 = diesel::select(db_tables::last_insert_id).first(&con).unwrap();
-
-                    cookies.add_private(
-                        Cookie::build(SESSION_CLIENT_DATA_COOKIE_NAME,
-                                      serde_json::to_string(&SessionClientData { auth_pass: random_stuff, enc_id: last_id }).unwrap())
-                            .secure(if cfg!(debug_assertions) { false } else { true })
-                            .http_only(true)
-                            .max_age(time::Duration::days(1))
-                            .finish());
+                    if let Some(secret) = login_candidate.secret_2fa_enc.as_ref() {
+                        if helper::totp_check(&base64::decode(secret).unwrap(),
+                                        login.two_factor_auth.parse().unwrap()) {
+                            login_success(&con, &mut cookies, &login_candidate, &login.password)
+                        } else {
+                            Flash::error(Redirect::to("/login/"), "Invalid Two Factor Authentication")
+                        }
+                    } else {
+                        login_success(&con, &mut cookies, &login_candidate, &login.password)
+                    }
 //                    cookies.add_private(Cookie::build("repo_encryption_password",
 //                                                      helper::decrypt_base64(
 //                                                          &login_candidate.enced_enc_pass,
@@ -349,7 +352,7 @@ pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) ->
 //                        .secure(true)
 //                        .http_only(true)
 //                        .finish());
-                    Flash::success(Redirect::to("/"), "Successfully logged in.")
+                    //Flash::success(Redirect::to("/"), "Successfully logged in.")
                 }
             } else {
                 Flash::error(Redirect::to("/login/"), "Username exists, invalid password though.")
@@ -361,6 +364,30 @@ pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) ->
         _ => panic!("Can't connect to db")
     }
 }
+
+fn login_success(con: &MysqlConnection, cookies: &mut Cookies, login_candidate: &db_tables::DbUserLogin, password: &str) -> Flash<Redirect> {
+    let random_stuff = helper::get_random_stuff(32);
+    diesel::insert_into(db_tables::AuthRepoPasswords::table).values(&db_tables::AuthRepoPasswordsDb {
+        expiry_date: chrono::Utc::now().naive_local() + chrono::Duration::days(SESSION_CLIENT_DATA_DB_AGE_HOURS),
+        owning_user: login_candidate.id,
+        auth_repo_enc_pass: helper::encrypt(&helper::decrypt_base64(
+            &login_candidate.enced_enc_pass,
+            password,
+            &login_candidate.salt), &random_stuff),
+    }).execute(con).expect("Failed to insert, db connection problem?");
+
+    let last_id: i32 = diesel::select(db_tables::last_insert_id).first(con).unwrap();
+
+    cookies.add_private(
+        Cookie::build(SESSION_CLIENT_DATA_COOKIE_NAME,
+                      serde_json::to_string(&SessionClientData { auth_pass: random_stuff, enc_id: last_id }).unwrap())
+            .secure(if cfg!(debug_assertions) { false } else { true })
+            .http_only(true)
+            .max_age(time::Duration::days(1))
+            .finish());
+    Flash::success(Redirect::to("/"), "Successfully logged in.")
+}
+
 
 #[get("/login", rank = 2)]
 pub fn login_page(flash: Option<FlashMessage>) -> Template {
@@ -422,7 +449,7 @@ pub fn act_email_change_post(username: String, data: Form<ActEmailChangeForm>) -
     let con = helper::est_db_con();
     let login_candidate: db_tables::DbUserLogin =
         Users::dsl::Users.filter(Users::username.eq(&username.to_lowercase()))
-            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email))
+            .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email, Users::secret_2fa_enc))
             .first::<db_tables::DbUserLogin>(&con)
             .map_err(|c| if c == diesel::result::Error::NotFound { Status::NotAcceptable } else { panic!("Can't connect to db") })?;
 
@@ -440,10 +467,91 @@ pub fn act_email_change_post(username: String, data: Form<ActEmailChangeForm>) -
     }
 }
 
+#[post("/account/change/2fa/enable")]
+pub fn enable_2fa(user: User) -> Result<String, Status> {
+    use db_tables::Users;
+
+    let con = helper::est_db_con();
+    if Users::table.select(Users::secret_2fa_enc)
+        .filter(Users::id.eq(user.id))
+        .first::<Option<String>>(&con).expect("Failed to connect to db").is_some() {
+        Err(Status::NotAcceptable)
+    } else {
+        let mut secret = [0u8; 20];
+        use ring::rand::SecureRandom;
+        helper::SECURE_RANDOM_GEN.fill(&mut secret);
+        let base32key = base32::encode(base32::Alphabet::RFC4648 { padding: false }, &secret);
+        Ok(base32key)
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ConfirmationInfo {
+    auth_code_confirm: String,
+    secret: String
+}
+
+#[post("/account/change/2fa/confirm", data = "<confirm_data>")]
+pub fn confirm_2fa(user: User, confirm_data: rocket_contrib::json::Json<ConfirmationInfo>) -> Result<(), Status> {
+    use db_tables::Users;
+
+    let con = helper::est_db_con();
+    if Users::table.select(Users::secret_2fa_enc)
+        .filter(Users::id.eq(user.id))
+        .first::<Option<String>>(&con).expect("Failed to connect to db").is_some() {
+        Err(Status::NotAcceptable)
+    } else {
+        let secret = base32::decode(base32::Alphabet::RFC4648 {padding:false}, &confirm_data.secret).expect("incoming secret not valid base32");
+        if helper::totp_check(&secret, confirm_data.auth_code_confirm.parse().unwrap()) {
+            let base64key = base64::encode(&secret);
+            diesel::update(Users::table.filter(Users::id.eq(user.id)))
+                .set(Users::secret_2fa_enc.eq(base64key))
+                .execute(&con).expect("Failed to connect to db");
+            Ok(())
+        } else {
+            Err(Status::Unauthorized)
+        }
+    }
+}
+
+#[derive(FromForm)]
+pub struct DisableAuthCode {
+    auth_code: String,
+}
+
+#[post("/account/change/2fa/disable", data = "<data>")]
+pub fn disable_2fa(user: User, data: Form<DisableAuthCode>) -> Result<(), Status> {
+    use db_tables::Users;
+    use std::time::{Duration, SystemTime};
+
+    #[derive(AsChangeset)]
+    #[table_name = "Users"]
+    #[changeset_options(treat_none_as_null = "true")]
+    struct Nullify2FaCode {
+        secret_2fa_enc: Option<String>
+    }
+
+    let con = helper::est_db_con();
+    let secret = Users::table.select(Users::secret_2fa_enc)
+        .filter(Users::id.eq(user.id))
+        .first::<Option<String>>(&con).expect("Failed to connect to db");
+    if let Some(secret) = secret {
+        if helper::totp_check(&base64::decode(&secret).unwrap(),
+                        data.auth_code.parse().unwrap_or_default()) {
+            diesel::update(Users::table.filter(Users::id.eq(user.id)))
+                .set(Nullify2FaCode { secret_2fa_enc: None })
+                .execute(&con).expect("Failed to connect to db");
+            Ok(())
+        } else {
+            Err(Status::Unauthorized)
+        }
+    } else {
+        Err(Status::NotAcceptable)
+    }
+}
+
 #[post("/logout")]
 pub fn logout(_user: User, mut cookies: Cookies) -> Flash<Redirect> {
-//    let session_client_data = cookies.get_private(SESSION_CLIENT_DATA_COOKIE_NAME).unwrap().value().parse().unwrap();
-//    let session_client_data: SessionClientData = serde_json::from_str(session_client_data).unwrap();
     diesel::delete(
         db_tables::AuthRepoPasswords::table.filter(db_tables::AuthRepoPasswords::id.eq(
             serde_json::from_str::<SessionClientData>(

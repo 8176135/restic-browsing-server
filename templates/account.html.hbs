@@ -5,7 +5,11 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-118638316-2"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
         gtag('js', new Date());
 
         gtag('config', 'UA-118638316-2');
@@ -24,6 +28,7 @@
             crossorigin="anonymous"></script>
     <script>window.jQuery || document.write('<script src="/public/js/jquery-3.3.1.min.js"><\/script>')</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="/public/js/qrcode.min.js"></script>
     <link rel="stylesheet" href="/public/css/main.css">
     <link rel="stylesheet" href="/public/css/account.css">
 </head>
@@ -40,12 +45,70 @@
         </div>
     </div>
 {{/if}}
+<div class="modal" id="two_fa_confirm">
+    <div class="modal-content white-text grey darken-2">
+        <h4>Scan this QR code into your Authentication App (e.g. Google Authenticator, Authy... etc.)</h4>
+        <div id="qrcode"></div>
+        <p>Or you can manually input this code: </p>
+        <code id="secret_code"></code>
+        <div class="right">
+            <h5 class="right">And then enter the 2FA code displayed on your device: </h5>
+            <div class="input-field auth_code_confirm">
+                <input type="text" name="auth_code" id="auth_code_confirm" class="validate" minlength="6" maxlength="6" value="" autocomplete="off" required>
+                <label for="auth_code_confirm">2FA Code: </label>
+            </div>
+            <button class="btn green darken-2 waves-effect waves-dark" id="confirm_2fa_btn" type="button">Confirm and Enable</button>
+            <p class="status"></p>
+        </div>
+    </div>
+    <div class="modal-footer grey darken-1">
+        <button class="waves-effect waves-dark btn modal-close red darken-2" type="submit">
+            Cancel<i class="material-icons right">close</i></button>
+    </div>
+</div>
+
+<div class="modal" id="two_fa_success">
+    <div class="modal-content white-text grey darken-2">
+        {{#if highlight_2fa}}
+            <h4>2FA Successfully Activated!</h4>
+        {{else}}
+            <h4>2FA disabled</h4>
+        {{/if}}
+    </div>
+    <div class="modal-footer grey darken-1">
+        <button class="waves-effect waves-dark btn modal-close" type="submit">
+            Close<i class="material-icons right">close</i>
+        </button>
+    </div>
+</div>
+
 <div class="heading">
     <h2>Restic Browser</h2>
     <h4>Account Management</h4>
 </div>
 
 <ul class="collapsible content black">
+    <li>
+        <div class="collapsible-header {{#if highlight_2fa}} orange darken-2 {{else}} grey darken-3 {{/if}}"><i class="material-icons">vpn_key</i>Two Factor Authentication</div>
+        <div class="collapsible-body">
+            {{#if highlight_2fa}}
+                <div class="line">
+                    <button id="enable2fa" class="btn green darken-2 waves-effect waves-dark full_width">Enable</button>
+                </div>
+            {{else}}
+                <div class="line">
+                    <div class="input-field">
+                        <input type="text" name="auth_code" id="auth_code" class="validate" minlength="6" maxlength="6" value="" autocomplete="off" required>
+                        <label for="auth_code">2FA Code: </label>
+                    </div>
+                    <button id="disable2fa" class="btn green darken-2 waves-effect waves-dark">Disable</button>
+                </div>
+                <div class="line">
+                    <p class="status" id="disable_2fa_status"></p>
+                </div>
+            {{/if}}
+        </div>
+    </li>
     <li>
         <div class="collapsible-header grey darken-4"><i class="material-icons">person</i>Change Username</div>
         <div class="collapsible-body">
@@ -88,17 +151,17 @@
             <form action="/account/change/email" method="post">
                 <div>Not implemented yet.</div>
                 <!--<div class="input-field">-->
-                    <!--<input type="email" name="email" id="email" class="validate" maxlength="100" value="{{email}}" required>-->
-                    <!--<label for="email">Email</label>-->
+                <!--<input type="email" name="email" id="email" class="validate" maxlength="100" value="{{email}}" required>-->
+                <!--<label for="email">Email</label>-->
                 <!--</div>-->
                 <!--<div class="line">-->
-                    <!--<button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>-->
+                <!--<button type="submit" class="btn green darken-2 waves-effect waves-dark submit">Submit<i class="material-icons right">send</i></button>-->
                 <!--</div>-->
             </form>
         </div>
     </li>
     <li>
-        <div class="collapsible-header grey darken-4"><i class="material-icons">delete</i>Delete Account</div>
+        <div class="collapsible-header grey darken-3"><i class="material-icons">delete</i>Delete Account</div>
         <div class="collapsible-body">
             <form action="/account/delete" method="post">
                 <div>Not implemented yet, just delete all your services and change your username and password.</div>

@@ -1,4 +1,6 @@
 #![allow(proc_macro_derive_resolution_fallback)]
+#![allow(non_snake_case)]
+
 table! {
     Users (id) {
         id -> Integer,
@@ -9,6 +11,7 @@ table! {
         enced_enc_pass -> Text,
         kilobytes_downloaded -> Integer,
         activation_code -> Nullable<Text>,
+        secret_2fa_enc -> Nullable<Text>,
     }
 }
 
@@ -128,6 +131,7 @@ pub struct DbUserIns {
     pub salt: String,
     pub enced_enc_pass: String,
     pub activation_code: Option<String>,
+    pub secret_2fa_enc: Option<String>,
 }
 
 #[derive(Identifiable, Queryable, Debug, Clone)]
@@ -139,6 +143,7 @@ pub struct DbUserLogin {
     pub enced_enc_pass: String,
     pub activation_code: Option<String>,
     pub email: String,
+    pub secret_2fa_enc: Option<String>,
 }
 
 #[derive(Queryable, Debug, Clone, Serialize)]
@@ -146,6 +151,7 @@ pub struct DbUserManagement {
 //    pub id: i32,
     pub username: String,
     pub email: String,
+    pub secret_2fa_enc: Option<String>,
 }
 
 #[derive(Identifiable, Queryable, Debug, Clone, Serialize)]

@@ -1,17 +1,17 @@
 /*
  Navicat Premium Data Transfer
 
- Source Server         : TestingDb
+ Source Server         : LocalDb
  Source Server Type    : MariaDB
- Source Server Version : 100137
- Source Host           : localhost:3306
+ Source Server Version : 100310
+ Source Host           : 192.168.239.129:3306
  Source Schema         : ResticOnlineAccounts
 
  Target Server Type    : MariaDB
- Target Server Version : 100137
+ Target Server Version : 100310
  File Encoding         : 65001
 
- Date: 29/01/2019 20:42:32
+ Date: 04/02/2019 14:48:06
 */
 
 SET NAMES utf8mb4;
@@ -27,7 +27,7 @@ CREATE TABLE `Announcements`  (
   `title` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `contents` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
 -- Table structure for AuthRepoPasswords
@@ -41,7 +41,7 @@ CREATE TABLE `AuthRepoPasswords`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `arp_ou_fk`(`owning_user`) USING BTREE,
   CONSTRAINT `arp_ou_fk` FOREIGN KEY (`owning_user`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Compact;
+) ENGINE = InnoDB AUTO_INCREMENT = 30 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
 -- Table structure for ConnectionInfo
@@ -114,7 +114,7 @@ CREATE TABLE `Services`  (
   INDEX `preset_user_Idx`(`owning_user`) USING BTREE,
   INDEX `preset_st_fk`(`service_type`) USING BTREE,
   CONSTRAINT `preset_st_fk` FOREIGN KEY (`service_type`) REFERENCES `ServiceType` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `service_ou_fk` FOREIGN KEY (`owning_user`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  CONSTRAINT `service_ou_fk` FOREIGN KEY (`owning_user`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
@@ -130,6 +130,7 @@ CREATE TABLE `Users`  (
   `enced_enc_pass` char(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `kilobytes_downloaded` int(10) NOT NULL DEFAULT 0,
   `activation_code` varchar(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL,
+  `secret_2fa_enc` char(28) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `username_UNIQUE`(`username`) USING BTREE,
   UNIQUE INDEX `email_UNIQUE`(`email`) USING BTREE
@@ -139,13 +140,13 @@ CREATE TABLE `Users`  (
 -- View structure for BasesList
 -- ----------------------------
 DROP VIEW IF EXISTS `BasesList`;
-CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `BasesList` AS select `Services`.`owning_user` AS `owning_user`,`Services`.`service_name` AS `service_name`,`Services`.`service_type` AS `service_type`,group_concat(`ServiceContents`.`env_name_id` separator ',') AS `env_name_ids`,group_concat(`ServiceContents`.`encrypted_env_value` separator ',') AS `encrypted_env_values`,`Services`.`enc_addr_part` AS `enc_addr_part` from (`Services` left join `ServiceContents` on((`ServiceContents`.`owning_service` = `Services`.`id`))) group by `Services`.`service_name`;
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `BasesList` AS select `Services`.`owning_user` AS `owning_user`,`Services`.`service_name` AS `service_name`,`Services`.`service_type` AS `service_type`,group_concat(`ServiceContents`.`env_name_id` separator ',') AS `env_name_ids`,group_concat(`ServiceContents`.`encrypted_env_value` separator ',') AS `encrypted_env_values`,`Services`.`enc_addr_part` AS `enc_addr_part` from (`Services` left join `ServiceContents` on(`ServiceContents`.`owning_service` = `Services`.`id`)) group by `Services`.`service_name`;
 
 -- ----------------------------
 -- View structure for QueryView
 -- ----------------------------
 DROP VIEW IF EXISTS `QueryView`;
-CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `QueryView` AS select `ConnectionInfo`.`name` AS `name`,`ConnectionInfo`.`path` AS `path`,`ConnectionInfo`.`owning_user` AS `owning_user`,`ConnectionInfo`.`encryption_password` AS `encryption_password`,`Services`.`service_name` AS `service_name`,`ServiceContents`.`encrypted_env_value` AS `encrypted_env_value`,`EnvNames`.`env_name` AS `env_name`,`ServiceType`.`service_type` AS `service_type`,`Services`.`enc_addr_part` AS `enc_addr_part` from ((((`ConnectionInfo` join `Services` on((`ConnectionInfo`.`service_used` = `Services`.`id`))) left join `ServiceContents` on((`Services`.`id` = `ServiceContents`.`owning_service`))) left join `EnvNames` on((`ServiceContents`.`env_name_id` = `EnvNames`.`id`))) join `ServiceType` on((`Services`.`service_type` = `ServiceType`.`id`)));
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `QueryView` AS select `ConnectionInfo`.`name` AS `name`,`ConnectionInfo`.`path` AS `path`,`ConnectionInfo`.`owning_user` AS `owning_user`,`ConnectionInfo`.`encryption_password` AS `encryption_password`,`Services`.`service_name` AS `service_name`,`ServiceContents`.`encrypted_env_value` AS `encrypted_env_value`,`EnvNames`.`env_name` AS `env_name`,`ServiceType`.`service_type` AS `service_type`,`Services`.`enc_addr_part` AS `enc_addr_part` from ((((`ConnectionInfo` join `Services` on(`ConnectionInfo`.`service_used` = `Services`.`id`)) left join `ServiceContents` on(`Services`.`id` = `ServiceContents`.`owning_service`)) left join `EnvNames` on(`ServiceContents`.`env_name_id` = `EnvNames`.`id`)) join `ServiceType` on(`Services`.`service_type` = `ServiceType`.`id`));
 
 -- ----------------------------
 -- Function structure for update_repositories

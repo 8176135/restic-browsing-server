@@ -37,9 +37,6 @@
 .list_content .line .btn.preview:hover {
   background-color: #3f51b5;
 }
-.list_content .line .btn.full_width {
-  flex: 1 0 auto;
-}
 .list_content .line .btn.edit {
   border-bottom-right-radius: 0;
   border-top-right-radius: 0;
