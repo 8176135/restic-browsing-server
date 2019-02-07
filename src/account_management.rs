@@ -4,7 +4,7 @@ use crate::{helper, db_tables, UserConInfo};
 use rocket_contrib::templates::Template;
 use rocket::response::{Redirect, Flash};
 use rocket::http::{Cookie, Cookies, Status};
-use rocket::request::{Form, FlashMessage, FromRequest, Request, Outcome};
+use rocket::request::{Form, FlashMessage, FromRequest, Request};
 use diesel::prelude::*;
 
 const SESSION_CLIENT_DATA_COOKIE_NAME: &str = "session_client_data";
@@ -35,7 +35,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
         if let Some(mut session_client_cookie) = session_client_data {
             let session_client_data: SessionClientData = serde_json::from_str(&session_client_cookie.value().parse::<String>().unwrap()).expect("Failed to deserialize session data");
             let con = helper::est_db_con();
-            use db_tables::{Users, AuthRepoPasswords, AuthRepoPasswordsDb};
+            use db_tables::{AuthRepoPasswords, AuthRepoPasswordsDb};
             match AuthRepoPasswords::table.select((AuthRepoPasswords::owning_user, AuthRepoPasswords::auth_repo_enc_pass, AuthRepoPasswords::expiry_date))
                 .filter(AuthRepoPasswords::id.eq(session_client_data.enc_id))
                 .first::<AuthRepoPasswordsDb>(&con) {
@@ -308,7 +308,6 @@ pub fn login_already_logged(user: User) -> Flash<Redirect> {
 #[post("/login", data = "<login>")]
 pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) -> Flash<Redirect> {
     use db_tables::Users;
-    use ::std::time::{SystemTime, Duration};
     println!("{:?}", con_info);
     {
         let mut guard = crate::CONNECTION_TRACKER.lock().unwrap();
@@ -335,7 +334,7 @@ pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) ->
                 } else {
                     if let Some(secret) = login_candidate.secret_2fa_enc.as_ref() {
                         if helper::totp_check(&base64::decode(secret).unwrap(),
-                                        login.two_factor_auth.parse().unwrap()) {
+                                        login.two_factor_auth.parse().unwrap_or_default()) {
                             login_success(&con, &mut cookies, &login_candidate, &login.password)
                         } else {
                             Flash::error(Redirect::to("/login/"), "Invalid Two Factor Authentication")
@@ -479,7 +478,7 @@ pub fn enable_2fa(user: User) -> Result<String, Status> {
     } else {
         let mut secret = [0u8; 20];
         use ring::rand::SecureRandom;
-        helper::SECURE_RANDOM_GEN.fill(&mut secret);
+        helper::SECURE_RANDOM_GEN.fill(&mut secret).unwrap();
         let base32key = base32::encode(base32::Alphabet::RFC4648 { padding: false }, &secret);
         Ok(base32key)
     }
@@ -522,7 +521,6 @@ pub struct DisableAuthCode {
 #[post("/account/change/2fa/disable", data = "<data>")]
 pub fn disable_2fa(user: User, data: Form<DisableAuthCode>) -> Result<(), Status> {
     use db_tables::Users;
-    use std::time::{Duration, SystemTime};
 
     #[derive(AsChangeset)]
     #[table_name = "Users"]

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-118638316-2"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
+        gtag('js', new Date());
+
+        gtag('config', 'UA-118638316-2');
+    </script>
+
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <title>Account Management - Restic Restorer</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Electrolize" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="/public/js/jquery-3.3.1.min.js"><\/script>')</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="/public/css/main.css">
+</head>
+<body>
+
+{{#if flash}}
+    <div class="message_popup modal">
+        <div class="modal-content white-text {{status}}">
+            <h4>{{to_uppercase status}}</h4>
+            {{flash}}
+        </div>
+        <div class="modal-footer grey darken-1">
+            <button class="waves-effect waves-dark btn modal-close" type="submit">Close<i class="material-icons right">close</i></button>
+        </div>
+    </div>
+{{/if}}
+
+<div class="heading">
+    <h2>Restic Browser</h2>
+</div>
+
+
+
+<div class="footer"></div>
+</body>
+</html>

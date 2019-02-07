@@ -54,6 +54,18 @@ $("select.preselect").each((idx, c) => {
 
 $(document).ready(function () {
     $('.modal').modal();
+
+    const preview_modal = $("#preview_modal");
+    const pm_repo_name = preview_modal.find(".repo_name");
+    const pm_code = preview_modal.find("code");
+
+    preview_modal.modal({
+        onCloseEnd: () => {
+            pm_code.text("Loading...");
+            pm_repo_name.text("");
+        }
+    });
+
     $('.message_popup').modal("open");
     $('.tabs').tabs();
     $('select').formSelect();
@@ -89,15 +101,6 @@ $(document).ready(function () {
         last_confirm_url = delete_url;
         delete_config_confirm_modal.find(".repo_name").text(decodeURIComponent(delete_url.replace(/\+/g, ' ')));
         delete_config_confirm_modal.attr("action", "/delete/repo/" + delete_url)
-    });
-
-    const preview_modal = $("#preview_modal");
-    const pm_repo_name = preview_modal.find(".repo_name");
-    const pm_code = preview_modal.find("code");
-
-    preview_modal.find(".modal-close").click((ev) => {
-        pm_code.text("Loading...");
-        pm_repo_name.text("");
     });
 
     $(".preview.btn").click((ev) => {

@@ -388,7 +388,7 @@ fn logout_no_login() -> Flash<Redirect> {
 
 #[get("/", rank = 2)]
 fn index() -> Redirect {
-    Redirect::to("/login/")
+    Redirect::to("/home/")
 }
 
 #[post("/retrieve/service/<service_name>")]
@@ -416,6 +416,16 @@ fn files(file: std::path::PathBuf) -> Option<NamedFile> {
     NamedFile::open(std::path::Path::new("public/").join(file)).ok()
 }
 
+#[get("/home")]
+fn home(user: Option<User>) -> Template {
+    struct HomePageInfo {
+        logged_in: bool
+    }
+    Template::render("home", HomePageInfo {
+        logged_in: user.is_some()
+    })
+}
+
 fn main() {
     std::thread::spawn(move || {
         loop {
@@ -441,6 +451,7 @@ fn main() {
                     files,
                     preview_command,
                     retrieve_service_data,
+                    home,
 
                     account_management::logout,
                     account_management::login_page,
