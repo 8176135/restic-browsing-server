@@ -8,7 +8,7 @@ use rocket::request::{Form, FlashMessage, FromRequest, Request};
 use diesel::prelude::*;
 
 const SESSION_CLIENT_DATA_COOKIE_NAME: &str = "session_client_data";
-const SESSION_CLIENT_DATA_DB_AGE_HOURS: i64 = 24;
+const SESSION_CLIENT_DATA_DB_AGE_HOURS: i64 = 12;
 pub const TWO_FACTOR_AUTH_TIME_WINDOW: u32 = 30;
 pub const TWO_FACTOR_AUTH_DIGITS: u32 = 6;
 

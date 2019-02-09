@@ -418,6 +418,7 @@ fn files(file: std::path::PathBuf) -> Option<NamedFile> {
 
 #[get("/home")]
 fn home(user: Option<User>) -> Template {
+    #[derive(Serialize)]
     struct HomePageInfo {
         logged_in: bool
     }
