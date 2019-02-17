@@ -1,0 +1,10 @@
+{
+  "domain": "example.com",
+  "database_url": "mysql://username:passwordl@127.0.0.1:3306/ResticOnlineAccounts",
+  "google_analytics_tid": "UA-XXXXXXX-X",
+  "invalid_email_domain_list_path": "disposable-email-domains/disposable_email_blocklist.conf",
+  "session_expire_age_hours": 12,
+  "max_login_attempts_per_ip_per_minute": 15,
+  "temporary_download_path": "temp_download/",
+  "global_download_size_cap_kilobytes": 100000
+}

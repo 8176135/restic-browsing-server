@@ -16,18 +16,17 @@ use std::io::{Write, Read};
 use diesel::prelude::*;
 
 use std::process::Command;
-use std::sync::RwLock;
+use std::sync::{Mutex, RwLock};
 use std::time::SystemTime;
 use ring::rand::{SystemRandom, SecureRandom};
 
 use self::regex::Regex;
 
-const DATABASE_URL: &str = include_str!("../database_url");
-
 lazy_static! {
    static ref EMAIL_DOMAIN_CACHE: RwLock<(SystemTime, Vec<String>)> = RwLock::new((SystemTime::UNIX_EPOCH, Vec::new()));
    static ref DUPLICATE_KEY_MSG_SEPERATOR: Regex = Regex::new(r#"Duplicate entry '(.*?[^\\]?)' for key '(.*?[^\\]?)'"#).unwrap();
    pub static ref SECURE_RANDOM_GEN: SystemRandom = ring::rand::SystemRandom::new();
+   pub static ref ANALYTICS_ENTRIES: Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
 
 pub fn zip_dir<T>(path: &str, writer: &mut T)
@@ -148,6 +147,7 @@ pub fn encrypt(plain_txt: &str, key: &str) -> String {
     use ring::aead::CHACHA20_POLY1305;
 
     let key = base64::decode(key).unwrap();
+    println!("{:?}", key.len());
     let mut nonce = vec![0u8; CHACHA20_POLY1305.nonce_len()];
     SECURE_RANDOM_GEN.fill(&mut nonce).unwrap();
     let sealing_key = ring::aead::SealingKey::new(&CHACHA20_POLY1305, &key).unwrap();
@@ -188,7 +188,7 @@ pub fn restic(env_vars: &std::collections::HashMap<String, String>, service_type
 }
 
 pub fn est_db_con() -> diesel::MysqlConnection {
-    diesel::MysqlConnection::establish(DATABASE_URL).expect("Can't connect to database")
+    diesel::MysqlConnection::establish(&crate::SERVER_CONFIG.database_url).expect("Can't connect to database")
 }
 
 pub fn encrypt_password(password: &str) -> (String, String) {
@@ -225,7 +225,13 @@ pub fn restic_db(repo_name: &str, user: &::User) -> Result<Command, ()> {
     let first = &data[0];
 
     Ok(restic(
-        &data.iter().map(|c| (c.env_name.clone(), decrypt(&c.encrypted_env_value, &user.encryption_password))).collect(),
+        &data.iter().filter_map(|c| {
+            if let Some(ref enc_env_value) = c.encrypted_env_value {
+                Some((c.env_name.clone().unwrap(), decrypt(enc_env_value, &user.encryption_password)))
+            } else {
+                None
+            }
+        }).collect(),
         &first.service_type,
         &decrypt(&first.enc_addr_part, &user.encryption_password),
         &first.path,
@@ -250,6 +256,17 @@ pub fn get_random_stuff(length: usize) -> String {
     SECURE_RANDOM_GEN.fill(store.as_mut()).unwrap();
 
     base64::encode(&store)
+}
+
+pub fn get_random_stuff_b32(length: usize) -> String {
+    use ring::rand::SecureRandom;
+
+    let mut store: Vec<u8> = Vec::new();
+    store.resize(length, 0u8);
+
+    SECURE_RANDOM_GEN.fill(store.as_mut()).unwrap();
+
+    base32::encode(base32::Alphabet::RFC4648 { padding: false }, &store)
 }
 
 //#[derive(PartialEq)]
@@ -278,12 +295,10 @@ pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Resul
     }
 }
 
-const INVALID_EMAIL_DOMAINS: &str = "disposable-email-domains/disposable_email_blocklist.conf";
-
 pub fn check_email_domain(email: &str) -> bool {
     let domain: &str = email.split("@").nth(1).unwrap();
 
-    let email_domains_last_modified = std::fs::metadata(INVALID_EMAIL_DOMAINS)
+    let email_domains_last_modified = std::fs::metadata(&crate::SERVER_CONFIG.invalid_email_domain_list_path)
         .expect("Failed to load email domains metadata").modified()
         .unwrap();
 
@@ -292,7 +307,7 @@ pub fn check_email_domain(email: &str) -> bool {
     if email_domains_last_modified.duration_since(cache_lock.0).expect("Metadata email duration not later than cache").as_secs() > 60 {
         drop(cache_lock);
         let mut cache_lock = EMAIL_DOMAIN_CACHE.write().unwrap();
-        *cache_lock = (email_domains_last_modified, std::fs::read_to_string(INVALID_EMAIL_DOMAINS).expect("Failed to read email blacklist").lines().map(|c| c.to_owned()).collect::<Vec<String>>());
+        *cache_lock = (email_domains_last_modified, std::fs::read_to_string(&crate::SERVER_CONFIG.invalid_email_domain_list_path).expect("Failed to read email blacklist").lines().map(|c| c.to_owned()).collect::<Vec<String>>());
         cache_lock.1.binary_search(&domain.to_owned()).is_err()
     } else {
         cache_lock.1.binary_search(&domain.to_owned()).is_err()
@@ -369,15 +384,198 @@ fn totp_internal(secret: &[u8], time: SystemTime, window_seconds: std::time::Dur
     })
 }
 
+use crate::account_management::User;
+use crate::UserConInfo;
+
+pub enum AnalyticsEvent {
+    Event(Events),
+    Page(Pages),
+}
+
+pub enum Events {
+    LoginSuccess,
+    LoginFail,
+    EmailChange,
+    PasswordChange,
+    Download,
+    PreviewCommand
+}
+
+pub enum Pages {
+    Login,
+    Index,
+    Home,
+    Bucket,
+    Account,
+    Register,
+}
+
+pub fn google_analytics_update(user: Option<&User>, user_info: &UserConInfo, ae: AnalyticsEvent) {
+    if let Some(ref tid) = crate::SERVER_CONFIG.google_analytics_tid {
+        let mut guard = ANALYTICS_ENTRIES.lock().unwrap();
+        match ae {
+            AnalyticsEvent::Event(ev) => {
+                let uniform = format!("v=1&t={kind}&dh={host}&tid={tid}&cid={cid}&uid={uid}&uip={ip}",
+                                      kind = "event",
+                                      tid = tid,
+                                      host = crate::SERVER_CONFIG.domain,
+                                      uid = user.map(|user| user.id).unwrap_or(std::i32::MAX),
+                                      cid = user_info.session,
+                                      ip = get_masked_ip(&user_info.ip));
+                match ev {
+                    Events::LoginSuccess => {
+                        guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
+                                           uniform = uniform,
+                                           event_category = "Auth",
+                                           event_action = "Login Success"));
+                    }
+                    Events::LoginFail => {
+                        guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
+                                           uniform = uniform,
+                                           event_category = "Auth",
+                                           event_action = "Login Fail"));
+                    }
+                    Events::PasswordChange => {
+                        guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
+                                           uniform = uniform,
+                                           event_category = "Account",
+                                           event_action = "Password Change"));
+                    }
+                    Events::EmailChange => {
+                        guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
+                                           uniform = uniform,
+                                           event_category = "Account",
+                                           event_action = "Email Change"));
+                    }
+                    Events::Download => {
+                        guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
+                                           uniform = uniform,
+                                           event_category = "Service Action",
+                                           event_action = "Download"));
+                    }
+                    Events::PreviewCommand => {
+                    guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
+                    uniform = uniform,
+                    event_category = "Service Action",
+                    event_action = "Preview Command"));
+                    }
+                }
+            }
+            AnalyticsEvent::Page(pg) => {
+                let uniform = format!("v=1&t={kind}&dh={host}&tid={tid}&cid={cid}&uid={uid}&uip={ip}",
+                                      kind = "pageview",
+                                      tid = tid,
+                                      host = crate::SERVER_CONFIG.domain,
+                                      uid = user.map(|user| user.id).unwrap_or(std::i32::MAX),
+                                      cid = user_info.session,
+                                      ip = get_masked_ip(&user_info.ip));
+
+                match pg {
+                    Pages::Login => {
+                        guard.push(format!("{uniform}&dt={document_title}&dp={document_path}",
+                                           uniform = uniform,
+                                           document_path = urlencoding::encode("/login"),
+                                           document_title = urlencoding::encode("Login")
+                        ))
+                    }
+                    Pages::Home => {
+                        guard.push(format!("{uniform}&dt={document_title}&dp={document_path}",
+                                           uniform = uniform,
+                                           document_path = urlencoding::encode("/home"),
+                                           document_title = urlencoding::encode("Home")
+                        ))
+                    }
+                    Pages::Account => {
+                        guard.push(format!("{uniform}&dt={document_title}&dp={document_path}",
+                                           uniform = uniform,
+                                           document_path = urlencoding::encode("/account"),
+                                           document_title = urlencoding::encode("Account Management")
+                        ))
+                    }
+                    Pages::Index => {
+                        guard.push(format!("{uniform}&dt={document_title}&dp={document_path}",
+                                           uniform = uniform,
+                                           document_path = urlencoding::encode("/"),
+                                           document_title = urlencoding::encode("Main Page")
+                        ))
+                    }
+                    Pages::Bucket => {
+                        guard.push(format!("{uniform}&dt={document_title}&dp={document_path}",
+                                           uniform = uniform,
+                                           document_path = urlencoding::encode("/bucket/"),
+                                           document_title = urlencoding::encode("Bucket")
+                        ))
+                    }
+                    Pages::Register => {
+                        guard.push(format!("{uniform}&dt={document_title}&dp={document_path}",
+                                           uniform = uniform,
+                                           document_path = urlencoding::encode("/register/"),
+                                           document_title = urlencoding::encode("Register")
+                        ))
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn google_analytics_send() -> Result<(),()> {
+    let mut guard = ANALYTICS_ENTRIES.lock().unwrap();
+
+    if guard.is_empty() {
+        return Ok(());
+    }
+    // Max 20 hits can be in one batch
+    for chunk in guard.chunks(20) {
+        let mut client = reqwest::Client::new()
+            .post("https://www.google-analytics.com/batch")
+            .body(chunk.iter().fold(String::new(), |acc, current| {
+                println!("{}", current);
+                acc + "\n" + current
+            })).send().map_err(|err| ())?;
+        println!("{:?}", client);
+    }
+
+    guard.clear();
+    Ok(())
+}
+
+fn get_masked_ip(ip: &std::net::IpAddr) -> String {
+    match ip {
+        std::net::IpAddr::V4(ip) => {
+            let mut original_ip = u32::from(*ip);
+            original_ip &= 0xFF_FF_FF;
+            original_ip.to_string()
+        }
+        std::net::IpAddr::V6(ip) => {
+            let mut original_ip = u128::from(*ip);
+            original_ip &= 0xFF_FF_FF;
+            original_ip.to_string()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn encrypt_decrypt_same_thing() {
-        let original = get_random_stuff(123);
-        let pass = get_random_stuff(50);
+        let original = get_random_stuff(32);
+        let pass = get_random_stuff(32);
         assert_eq!(decrypt(&encrypt(&original, &pass), &pass), original);
+    }
+
+    #[test]
+    fn totp_test() {
+        let secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, "JBSWY3DPEHPK3PXP").unwrap();
+        assert_eq!(
+            totp_internal(&secret,
+                          SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1550201023),
+                          std::time::Duration::from_secs(::account_management::TWO_FACTOR_AUTH_TIME_WINDOW as u64),
+                          ::account_management::TWO_FACTOR_AUTH_DIGITS,
+                          211437),
+            true);
     }
 }
 

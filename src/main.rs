@@ -20,6 +20,8 @@ extern crate chrono;
 extern crate time;
 extern crate ring;
 
+extern crate reqwest;
+
 mod helper;
 mod db_tables;
 mod handlebar_helpers;
@@ -42,6 +44,20 @@ use rocket::response::NamedFile;
 
 use account_management::User;
 
+use helper::{google_analytics_update, Events, Pages, AnalyticsEvent};
+
+#[derive(Debug, Deserialize, Default)]
+pub struct ServerConfig {
+    domain: String,
+    database_url: String,
+    google_analytics_tid: Option<String>,
+    invalid_email_domain_list_path: String,
+    session_expire_age_hours: i64,
+    max_login_attempts_per_ip_per_minute: u16,
+    temporary_download_path: String,
+    global_download_size_cap_kilobytes: i32,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SharedPageData {
     used_kilobytes: i32,
@@ -51,12 +67,27 @@ pub struct SharedPageData {
 #[derive(Debug)]
 pub struct UserConInfo {
     ip: IpAddr,
+    session: String,
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for UserConInfo {
     type Error = ();
     fn from_request(request: &'a Request<'r>) -> rocket::request::Outcome<UserConInfo, ()> {
-        rocket::Outcome::Success(UserConInfo { ip: request.client_ip().expect("Nginx not passing real-ip?") })
+        let mut cookies = request.cookies();
+        let session = if let Some(session) = cookies.get("session").cloned() {
+            let mut session_cookie = SESSION_TRACKER_COOKIE.clone();
+            session_cookie.set_value(session.value().to_owned());
+            cookies.add(session_cookie);
+            session.value().to_owned()
+        } else {
+            let session = helper::get_random_stuff_b32(16);
+            cookies.add(SESSION_TRACKER_COOKIE.clone());
+            session
+        };
+        rocket::Outcome::Success(UserConInfo {
+            ip: request.client_ip().expect("Nginx not passing real-ip?"),
+            session,
+        })
     }
 }
 
@@ -67,16 +98,36 @@ struct ServiceData {
     env_var_names_list: Vec<i32>,
 }
 
-const TEMP_STORAGE_PATH: &str = "temp_download/";
-const SIZE_CAP_KILOBYTES: i32 = 100 * 1000;
-const MAX_CON_PER_MINUTE_PER_IP: u8 = 15;
+#[derive(Deserialize, Debug)]
+struct ResticListOutput {
+    nodes: Vec<ResticNode>,
+}
+
+#[derive(Deserialize, Debug)]
+struct ResticNode {
+    path: String,
+    name: String,
+    size: Option<u64>,
+    r#type: String,
+}
+
+const CONFIG_FILE_PATH: &str = "rbs_config.json";
+
 //const RESTIC_CACHE_PATH: &str = ".cache/restic/";
 
 lazy_static! {
-    static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<(String,i64)>>> = Mutex::new(HashMap::new());
+    static ref PATH_CACHE: Mutex<HashMap<(i16,String),ResticListOutput>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
-    static ref CONNECTION_TRACKER: Mutex<HashMap<IpAddr, u8>> = Mutex::new(HashMap::new());
+    static ref CONNECTION_TRACKER: Mutex<HashMap<IpAddr, u16>> = Mutex::new(HashMap::new());
 
+    static ref SESSION_TRACKER_COOKIE: rocket::http::Cookie<'static> = rocket::http::Cookie::build("session", "")
+                .max_age(time::Duration::days(365 * 2))
+                .path("/")
+                .same_site(rocket::http::SameSite::Lax)
+                .finish();
+    static ref ABC: i64 = crate::SERVER_CONFIG.session_expire_age_hours;
+
+    pub static ref SERVER_CONFIG: ServerConfig = config();
 //    static ref MAX_COOKIE_AGE: time::Duration = time::Duration::days(1);
 }
 
@@ -86,7 +137,7 @@ fn already_logged_in(_user: User) -> Redirect {
 }
 
 #[get("/")]
-fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
+fn user_index(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) -> Template {
     use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList, Announcements, AnnouncementDb};
 
     #[derive(Serialize, Queryable)]
@@ -117,6 +168,8 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         announcements: Vec<AnnouncementDb>,
     }
 
+    helper::google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Page(Pages::Index));
+
     let (flash, status) = match flash {
         None => (None, None),
         Some(c) => (Some(c.msg().to_owned()), Some(c.name().to_owned()))
@@ -135,7 +188,7 @@ fn user_index(user: User, flash: Option<FlashMessage>) -> Template {
         services: Vec::new(),
         shared_data: SharedPageData {
             used_kilobytes: helper::get_used_kilos(&con, user.id),
-            total_kilobytes: SIZE_CAP_KILOBYTES,
+            total_kilobytes: SERVER_CONFIG.global_download_size_cap_kilobytes,
         },
         announcements: Vec::new(),
     };
@@ -181,7 +234,10 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
 }
 
 #[post("/preview/<repo_name>")]
-fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<String>> {
+fn preview_command(user: User, con_info: UserConInfo, repo_name: String) -> Result<String, NotFound<String>> {
+
+    google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Event(Events::PreviewCommand));
+
     if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
         cmd.arg("ls")
             .arg("-l")
@@ -193,7 +249,7 @@ fn preview_command(user: User, repo_name: String) -> Result<String, NotFound<Str
 }
 
 #[get("/bucket/<repo_name>")]
-fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redirect>> {
+fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Result<Template, Flash<Redirect>> {
     use std::path::PathBuf;
 
     #[derive(Serialize)]
@@ -203,13 +259,30 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
         files: String,
         shared_data: SharedPageData,
     }
+
+    google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Page(Pages::Bucket));
+
     if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
-        let out = cmd.arg("ls")
-            .arg("-l")
+        let out = cmd.arg("--json")
+            .arg("ls")
             .arg("latest")
             .output().unwrap();
 
         let error_str = String::from_utf8_lossy(&out.stderr);
+
+
+        let all_files = if let Some(all_files) = serde_json::from_str::<Vec<ResticListOutput>>(&String::from_utf8_lossy(&out.stdout))
+            .unwrap_or_default().into_iter().next() {
+            all_files
+        } else {
+            // Returns the restic error back to the user.
+            // To prevent exploits the server should be ran on a dedicated account that only has permission to the download folder and restic
+            // Otherwise restic might be manipulated to output some information about the server (probably not, but just in case).
+            return Err(Flash::error(
+                Redirect::to("/"),
+                format!("Restic error: \"{}\"", error_str)));
+        };
+
         println!("Error str: {}", error_str);
         if error_str.find("b2_download_file_by_name: 404:").is_some() {
             return Err(Flash::error(
@@ -221,70 +294,44 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
                 Redirect::to("/"),
                 "Repository password is incorrect"));
         }
-        std::fs::write("TEST", &out.stdout).expect("WRITING PROBLEM");
-        let mut all_files: Vec<(String, i64)> = String::from_utf8_lossy(&out.stdout)
-            .lines().skip(1).filter_map(|c| {
-            match c.chars().next().unwrap_or('s') {
-                '-' => (),
-                'd' => (),
-                _ => return None,
-            }
-            let size_in_bytes: i64;
-            let mut folder_path = String::new();
-            {
-                let mut pieces = c.split_whitespace();
-                size_in_bytes = pieces.nth(3).unwrap().parse().expect("Size is not number");
-
-                let mut path_started = false;
-                for item in pieces {
-                    if path_started || item.chars().next().unwrap_or('-') == '/' {
-                        if path_started {
-                            folder_path.push(' ');
-                        }
-                        path_started = true;
-                        folder_path.push_str(item);
-                    }
-                }
-            }
-
-            if c.chars().next().expect("suddenly no next character,") == 'd' {
-                folder_path.push('/');
-            }
-            Some((folder_path.trim().to_owned(), size_in_bytes))
-        }).collect();
 
         let mut final_html = String::new();
         {
-            let first_item = &all_files.first().expect("No files in backup").0;
-            let mut cur_folder = PathBuf::from(first_item);
-            if !cur_folder.is_dir() {
-                cur_folder.pop();
+            let first_item = all_files.nodes.first().expect("No files in backup");
+            if first_item.r#type == "file" {
+                panic!("First json item should not be a file...");
             }
+            let mut cur_folder = PathBuf::from(&first_item.path);
+
+//            if !cur_folder.is_dir() {
+//                cur_folder.pop();
+//            }
             let mut counter = 0;
 
-            for (idx, (path_str, path_size)) in all_files.iter().enumerate() {
-                let path = PathBuf::from(path_str);
-
+            for (idx, item) in all_files.nodes.iter().enumerate() {
+                let path = PathBuf::from(&item.path);
                 while counter != 0 && !path.starts_with(&cur_folder) {
-                    if cur_folder.file_name().expect("No file name") != std::ffi::OsStr::new(" ") {
-                        final_html.push_str("</ul></li>");
-                        counter -= 1;
-                    }
+                    final_html.push_str("</ul></li>");
+                    counter -= 1;
                     cur_folder.pop();
                 }
+
                 //println!("Path: {}", path_str);
-                if path_str.ends_with('/') {
-                    path.strip_prefix(&cur_folder).unwrap().components().for_each(|c| {
-                        final_html.push_str(
-                            &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span></label><ul>",
-                                     idx, c.as_os_str().to_str().unwrap()));
-                        counter += 1;
-                    });
+                if item.r#type == "dir" {
+                    //path.strip_prefix(&cur_folder).unwrap().components().for_each(|c| {
+                    final_html.push_str(
+                        &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span></label><ul>",
+                                 idx, item.name));
+                    counter += 1;
+                    //});
                     cur_folder = path;
-                } else {
+                } else if item.r#type == "file" {
+//                    println!("Stuff: {:?}", item);
                     final_html.push_str(
                         &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span><span class=\"file-size\">{:.1} KB</span></label></li>",
-                                 idx, path.file_name().expect("No file name").to_str().unwrap(), *path_size as f32 * 0.001f32));
+                                 idx, item.name, item.size.unwrap_or_default() as f32 * 0.001f32));
+                } else {
+                    panic!("{}", item.r#type);
                 }
             }
             for _ in 0..counter {
@@ -314,7 +361,7 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
                                 files: final_html,
                                 shared_data: SharedPageData {
                                     used_kilobytes: helper::get_used_kilos(&helper::est_db_con(), user.id),
-                                    total_kilobytes: SIZE_CAP_KILOBYTES,
+                                    total_kilobytes: SERVER_CONFIG.global_download_size_cap_kilobytes,
                                 },
                             }))
     } else {
@@ -325,11 +372,14 @@ fn get_bucket_data(user: User, repo_name: String) -> Result<Template, Flash<Redi
 }
 
 #[post("/bucket/<repo_name>/download", data = "<file_paths>")]
-fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) -> Result<Vec<u8>, Status> {
+fn download_data(user: User, con_info: UserConInfo, repo_name: String, file_paths: Json<Vec<usize>>) -> Result<Vec<u8>, Status> {
     use std::fs;
     use db_tables::Users;
+
+    google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Event(Events::Download));
+
     let con = helper::est_db_con();
-    let kilos_remaining = SIZE_CAP_KILOBYTES - helper::get_used_kilos(&con, user.id);
+    let kilos_remaining = SERVER_CONFIG.global_download_size_cap_kilobytes - helper::get_used_kilos(&con, user.id);
 
     {
         let mut down_guard = DOWNLOAD_IN_USE.lock().expect("Failed to lock download guard, another thread panic?");
@@ -339,7 +389,7 @@ fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) ->
         down_guard.insert(user.id, true);
     }
 
-    let download_path = format!("{}{}/", TEMP_STORAGE_PATH, user.id);
+    let download_path = format!("{}{}/", SERVER_CONFIG.temporary_download_path, user.id);
     fs::create_dir(&download_path).is_ok();
     let guard = PATH_CACHE.lock().unwrap();
     let mut cmd = if let Some(all_paths) = guard.get(&(user.id as i16, repo_name.clone())) {
@@ -347,14 +397,14 @@ fn download_data(user: User, repo_name: String, file_paths: Json<Vec<usize>>) ->
 
         if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", &download_path));
-            let total = file_paths.iter().fold(0i64, |prev, path_idx| {
-                let (path, size) = &all_paths[*path_idx];
-                cmd.arg("--include=".to_owned() + path);
-                prev + size
+            let total = file_paths.iter().fold(0u64, |prev, path_idx| {
+                let elem = &all_paths.nodes[*path_idx];
+                cmd.arg("--include=".to_owned() + &elem.path);
+                prev + elem.size.unwrap_or_default()
             });
-            if total / 1000 < kilos_remaining as i64 {
+            if total / 1000 < kilos_remaining as u64 {
                 diesel::update(Users::table.filter(Users::id.eq(user.id)))
-                    .set(Users::kilobytes_downloaded.eq(SIZE_CAP_KILOBYTES - kilos_remaining + (total / 1000) as i32))
+                    .set(Users::kilobytes_downloaded.eq(SERVER_CONFIG.global_download_size_cap_kilobytes - kilos_remaining + (total / 1000) as i32))
                     .execute(&con).expect("Failed to update kilobyte remaining");
                 Ok(cmd)
             } else {
@@ -417,20 +467,42 @@ fn files(file: std::path::PathBuf) -> Option<NamedFile> {
 }
 
 #[get("/home")]
-fn home(user: Option<User>) -> Template {
+fn home(user: Option<User>, con_info: UserConInfo) -> Template {
     #[derive(Serialize)]
     struct HomePageInfo {
         logged_in: bool
     }
+
+    google_analytics_update(user.as_ref(), &con_info, AnalyticsEvent::Page(Pages::Home));
+
     Template::render("home", HomePageInfo {
         logged_in: user.is_some()
     })
 }
 
+// This is probably not the best way to do things, any alternatives to using a global uninitialized variable appreciated
+//pub static mut SERVER_CONFIG: ServerConfig = ServerConfig {..Default::default()};
+
+fn config() -> ServerConfig {
+    serde_json::from_str(
+        &std::fs::read_to_string(CONFIG_FILE_PATH).expect("Failed to open config file"))
+        .expect("Config file format invalid")
+}
+
+#[catch(500)]
+fn internal_error() -> &'static str {
+    "Whoops! Looks like we messed up."
+}
+
 fn main() {
+    println!("{:#?}", *SERVER_CONFIG);
+
     std::thread::spawn(move || {
         loop {
             { CONNECTION_TRACKER.lock().unwrap().clear(); }
+            if helper::google_analytics_send().is_err() {
+                println!("Failed to send analytics data");
+            }
             std::thread::sleep(std::time::Duration::from_secs(60));
         }
     });
@@ -479,5 +551,7 @@ fn main() {
                     repository_mods::delete_repo,
                     repository_mods::delete_service,
                     repository_mods::add_b2_preset
-                    ]).launch();
+                    ])
+        .register(catchers![internal_error])
+        .launch();
 }

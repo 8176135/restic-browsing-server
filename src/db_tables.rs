@@ -85,8 +85,8 @@ table! {
         owning_user -> Integer,
         encryption_password -> Text,
         service_name -> Text,
-        encrypted_env_value -> Text,
-        env_name -> Text,
+        encrypted_env_value -> Nullable<Text>,
+        env_name -> Nullable<Text>,
         service_type -> Text,
         enc_addr_part -> Text,
     }
@@ -212,8 +212,8 @@ pub struct DbQueryView {
     pub owning_user: i32,
     pub encryption_password: String,
     pub service_name: String,
-    pub encrypted_env_value: String,
-    pub env_name: String,
+    pub encrypted_env_value: Option<String>,
+    pub env_name: Option<String>,
     pub service_type: String,
     pub enc_addr_part: String,
 }
