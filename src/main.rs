@@ -20,7 +20,12 @@ extern crate chrono;
 extern crate time;
 extern crate ring;
 
+#[macro_use]
+extern crate slog;
+extern crate sloggers;
+
 extern crate reqwest;
+extern crate lettre;
 
 mod helper;
 mod db_tables;
@@ -44,7 +49,11 @@ use rocket::response::NamedFile;
 
 use account_management::User;
 
+use slog::Logger;
+use sloggers::Build;
+
 use helper::{google_analytics_update, Events, Pages, AnalyticsEvent};
+use lettre::smtp::extension::Extension::StartTls;
 
 #[derive(Debug, Deserialize, Default)]
 pub struct ServerConfig {
@@ -128,6 +137,13 @@ lazy_static! {
     static ref ABC: i64 = crate::SERVER_CONFIG.session_expire_age_hours;
 
     pub static ref SERVER_CONFIG: ServerConfig = config();
+
+    pub static ref LOGGER: Logger = sloggers::file::FileLoggerBuilder::new("rbs_log.log")
+            .format(sloggers::types::Format::Full)
+            .rotate_size(50_000_000)
+            .rotate_compress(true)
+            .build()
+            .unwrap();
 //    static ref MAX_COOKIE_AGE: time::Duration = time::Duration::days(1);
 }
 
@@ -137,7 +153,7 @@ fn already_logged_in(_user: User) -> Redirect {
 }
 
 #[get("/")]
-fn user_index(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) -> Template {
+fn user_index(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) -> Result<Template, Status> {
     use db_tables::{ConnectionInfo, ServiceType, BasesList, Services, EnvNames, DbBasesList, Announcements, AnnouncementDb};
 
     #[derive(Serialize, Queryable)]
@@ -175,7 +191,7 @@ fn user_index(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) ->
         Some(c) => (Some(c.msg().to_owned()), Some(c.name().to_owned()))
     };
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
 
     let mut item = Item {
         id: user.id,
@@ -197,7 +213,11 @@ fn user_index(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) ->
         .select((ConnectionInfo::name, ConnectionInfo::path, Services::service_name))
         .filter(ConnectionInfo::owning_user.eq(user.id))
         .order_by(ConnectionInfo::name.asc())
-        .load::<ConInfoData>(&con).expect("Folder name query not going through");
+        .load::<ConInfoData>(&con)
+        .map_err(|err| {
+            error!(*LOGGER, "Folder name query not going through");
+            Status::InternalServerError
+        })?;
 
     item.service_type = ServiceType::dsl::ServiceType
         .load::<db_tables::DbServiceType>(&con).expect("Service type query not working");
@@ -225,7 +245,7 @@ fn user_index(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) ->
         }).collect()
     };
 
-    Template::render("index", &item)
+    Ok(Template::render("index", &item))
 }
 
 #[get("/bucket/<_folder_name>", rank = 2)]
@@ -234,17 +254,16 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
 }
 
 #[post("/preview/<repo_name>")]
-fn preview_command(user: User, con_info: UserConInfo, repo_name: String) -> Result<String, NotFound<String>> {
-
+fn preview_command(user: User, con_info: UserConInfo, repo_name: String) -> Result<String, Status> {
     google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Event(Events::PreviewCommand));
 
-    if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
+    if let Ok(mut cmd) = helper::restic_db(&helper::est_db_con().map_err(|_| Status::InternalServerError)? ,&repo_name, &user) {
         cmd.arg("ls")
             .arg("-l")
             .arg("latest");
         Ok(format!("{:?}", cmd))
     } else {
-        Err(NotFound("Repository doesn't exist".to_owned()))
+        Err(Status::NotFound)
     }
 }
 
@@ -261,8 +280,8 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
     }
 
     google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Page(Pages::Bucket));
-
-    if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
+    let con = helper::est_db_con().map_err(|_| Flash::error(Redirect::to("/"), "Internal server error"))?;
+    if let Ok(mut cmd) = helper::restic_db(&con ,&repo_name, &user) {
         let out = cmd.arg("--json")
             .arg("ls")
             .arg("latest")
@@ -299,6 +318,7 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
         {
             let first_item = all_files.nodes.first().expect("No files in backup");
             if first_item.r#type == "file" {
+                error!(*LOGGER, "First restic json item is a file");
                 panic!("First json item should not be a file...");
             }
             let mut cur_folder = PathBuf::from(&first_item.path);
@@ -331,7 +351,8 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
                         &format!("<li><label><input type=\"checkbox\" data-folder-num=\"{}\"><span>{}</span><span class=\"file-size\">{:.1} KB</span></label></li>",
                                  idx, item.name, item.size.unwrap_or_default() as f32 * 0.001f32));
                 } else {
-                    panic!("{}", item.r#type);
+                    error!(*LOGGER, "restic JSON output file type unexpected: {}", item.r#type);
+                    panic!("restic JSON output file type unexpected: {}", item.r#type);
                 }
             }
             for _ in 0..counter {
@@ -360,7 +381,7 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
                                 status_msg: String::new(),
                                 files: final_html,
                                 shared_data: SharedPageData {
-                                    used_kilobytes: helper::get_used_kilos(&helper::est_db_con(), user.id),
+                                    used_kilobytes: helper::get_used_kilos(&con, user.id),
                                     total_kilobytes: SERVER_CONFIG.global_download_size_cap_kilobytes,
                                 },
                             }))
@@ -378,7 +399,7 @@ fn download_data(user: User, con_info: UserConInfo, repo_name: String, file_path
 
     google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Event(Events::Download));
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
     let kilos_remaining = SERVER_CONFIG.global_download_size_cap_kilobytes - helper::get_used_kilos(&con, user.id);
 
     {
@@ -389,13 +410,13 @@ fn download_data(user: User, con_info: UserConInfo, repo_name: String, file_path
         down_guard.insert(user.id, true);
     }
 
-    let download_path = format!("{}{}/", SERVER_CONFIG.temporary_download_path, user.id);
+    let download_path = format!("{}{}-{}/", SERVER_CONFIG.temporary_download_path, user.id, helper::get_random_stuff_b32(4));
     fs::create_dir(&download_path).is_ok();
     let guard = PATH_CACHE.lock().unwrap();
     let mut cmd = if let Some(all_paths) = guard.get(&(user.id as i16, repo_name.clone())) {
         let file_paths: Vec<usize> = file_paths.into_inner();
 
-        if let Ok(mut cmd) = helper::restic_db(&repo_name, &user) {
+        if let Ok(mut cmd) = helper::restic_db(&con, &repo_name, &user) {
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", &download_path));
             let total = file_paths.iter().fold(0u64, |prev, path_idx| {
                 let elem = &all_paths.nodes[*path_idx];
@@ -405,7 +426,9 @@ fn download_data(user: User, con_info: UserConInfo, repo_name: String, file_path
             if total / 1000 < kilos_remaining as u64 {
                 diesel::update(Users::table.filter(Users::id.eq(user.id)))
                     .set(Users::kilobytes_downloaded.eq(SERVER_CONFIG.global_download_size_cap_kilobytes - kilos_remaining + (total / 1000) as i32))
-                    .execute(&con).expect("Failed to update kilobyte remaining");
+                    .execute(&con)
+                    .map_err(|err| error!(*LOGGER, "Error updating kilo_remaining: {:?}", err))
+                    .expect("Error updating kilo_remaining");
                 Ok(cmd)
             } else {
                 Err(Status::FailedDependency)
@@ -422,9 +445,12 @@ fn download_data(user: User, con_info: UserConInfo, repo_name: String, file_path
 
     let mut data_to_send = std::io::Cursor::new(Vec::<u8>::new());
     helper::zip_dir(&download_path, &mut data_to_send);
+
     let inner = data_to_send.into_inner();
 
-    std::fs::remove_dir_all(&download_path).expect("Failed to delete files");
+    std::fs::remove_dir_all(&download_path)
+        .map_err(|err| error!(*LOGGER, "Failed to remove dir"))
+        .is_ok();
 
     DOWNLOAD_IN_USE.lock().expect("Failed to lock download guard, another thread panic?").insert(user.id, false);
 
@@ -442,15 +468,15 @@ fn index() -> Redirect {
 }
 
 #[post("/retrieve/service/<service_name>")]
-fn retrieve_service_data(user: User, service_name: String) -> Json<ServiceData> {
+fn retrieve_service_data(user: User, service_name: String) -> Result<Json<ServiceData>, Status> {
     use db_tables::{BasesList, DbBasesListReturn};
     // `line` is of type `Result<String, Error>`
     let data: DbBasesListReturn = BasesList::table.select((BasesList::env_name_ids, BasesList::encrypted_env_values, BasesList::enc_addr_part))
         .filter(BasesList::service_name.eq(service_name))
         .filter(BasesList::owning_user.eq(user.id))
-        .first::<DbBasesListReturn>(&helper::est_db_con()).expect("Can't get bases list data");
+        .first::<DbBasesListReturn>(&helper::est_db_con().map_err(|_| Status::InternalServerError)?).expect("Can't get bases list data");
 
-    Json(ServiceData {
+    Ok(Json(ServiceData {
         enc_addr_part: helper::decrypt(&data.enc_addr_part, &user.encryption_password),
         env_value_list: data.encrypted_env_values.map_or(Vec::new(),
                                                          |c|
@@ -458,7 +484,7 @@ fn retrieve_service_data(user: User, service_name: String) -> Json<ServiceData> 
                                                                  .map(|c| helper::decrypt(c, &user.encryption_password))
                                                                  .collect::<Vec<String>>()),
         env_var_names_list: data.env_name_ids.map_or(Vec::new(), |c| c.split(",").map(|c| c.parse::<i32>().expect("env_name_id not numbers")).collect::<Vec<i32>>()),
-    })
+    }))
 }
 
 #[get("/public/<file..>")]
@@ -501,7 +527,7 @@ fn main() {
         loop {
             { CONNECTION_TRACKER.lock().unwrap().clear(); }
             if helper::google_analytics_send().is_err() {
-                println!("Failed to send analytics data");
+                error!(*LOGGER, "Failed to send analytics data");
             }
             std::thread::sleep(std::time::Duration::from_secs(60));
         }

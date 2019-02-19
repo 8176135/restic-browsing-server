@@ -8,6 +8,7 @@ extern crate regex;
 extern crate lettre;
 
 use ::db_tables;
+use crate::LOGGER;
 
 use ::std;
 use std::path::Path;
@@ -29,12 +30,15 @@ lazy_static! {
    pub static ref ANALYTICS_ENTRIES: Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
 
-pub fn zip_dir<T>(path: &str, writer: &mut T)
+pub fn zip_dir<T>(path: &str, writer: &mut T) -> bool
     where T: std::io::Write + std::io::Seek {
     zip_dir_internal(
         &mut walkdir::WalkDir::new(&path)
             .into_iter().filter_map(|e| e.ok()),
-        path, writer).expect("WTF");
+        path, writer).map_err(|err| {
+        error!(*LOGGER, "Failed to zip up dir: {}", err);
+        err
+    }).is_err()
 }
 
 fn zip_dir_internal<T>(it: &mut Iterator<Item=walkdir::DirEntry>, prefix: &str, writer: &mut T)
@@ -187,8 +191,8 @@ pub fn restic(env_vars: &std::collections::HashMap<String, String>, service_type
     b2_command
 }
 
-pub fn est_db_con() -> diesel::MysqlConnection {
-    diesel::MysqlConnection::establish(&crate::SERVER_CONFIG.database_url).expect("Can't connect to database")
+pub fn est_db_con() -> Result<diesel::MysqlConnection, ()> {
+    diesel::MysqlConnection::establish(&crate::SERVER_CONFIG.database_url).map_err(|err| error!(*LOGGER, "Failed to connect to database"))
 }
 
 pub fn encrypt_password(password: &str) -> (String, String) {
@@ -209,15 +213,15 @@ pub fn verify_user(db_entry: &db_tables::DbUserLogin, password_candi: &str) -> b
                          base64::decode(&db_entry.password).unwrap().as_ref()).is_ok()
 }
 
-pub fn restic_db(repo_name: &str, user: &::User) -> Result<Command, ()> {
+pub fn restic_db(con: &MysqlConnection, repo_name: &str, user: &::User) -> Result<Command, ()> {
     use db_tables::QueryView;
 
-    let con = est_db_con();
+    //let con = est_db_con()?;
 
     let data: Vec<db_tables::DbQueryView> = QueryView::dsl::QueryView
         .filter(QueryView::owning_user.eq(user.id))
         .filter(QueryView::name.eq(repo_name))
-        .load::<db_tables::DbQueryView>(&con).expect("Can't select QueryView");
+        .load::<db_tables::DbQueryView>(con).expect("Can't select QueryView");
 
     if data.is_empty() {
         return Err(());
@@ -295,19 +299,30 @@ pub fn check_for_unique_error<T>(res: Result<T, diesel::result::Error>) -> Resul
     }
 }
 
-pub fn check_email_domain(email: &str) -> bool {
-    let domain: &str = email.split("@").nth(1).unwrap();
-
-    let email_domains_last_modified = std::fs::metadata(&crate::SERVER_CONFIG.invalid_email_domain_list_path)
-        .expect("Failed to load email domains metadata").modified()
-        .unwrap();
+pub fn check_email_domain(domain: &str) -> bool {
+    let email_domains_last_modified =
+        if let Ok(c) = std::fs::metadata(&crate::SERVER_CONFIG.invalid_email_domain_list_path) {
+            c.modified().unwrap()
+        } else {
+            error!(*LOGGER, "Failed to load email domain list");
+            return true;
+        };
 
     let cache_lock = EMAIL_DOMAIN_CACHE.read().unwrap();
 
-    if email_domains_last_modified.duration_since(cache_lock.0).expect("Metadata email duration not later than cache").as_secs() > 60 {
+    if email_domains_last_modified.duration_since(cache_lock.0).unwrap_or_else(|_| {
+        error!(*LOGGER, "Metadata email duration not later than cache");
+        std::time::Duration::from_secs(999)
+    }).as_secs() > 60 {
         drop(cache_lock);
         let mut cache_lock = EMAIL_DOMAIN_CACHE.write().unwrap();
-        *cache_lock = (email_domains_last_modified, std::fs::read_to_string(&crate::SERVER_CONFIG.invalid_email_domain_list_path).expect("Failed to read email blacklist").lines().map(|c| c.to_owned()).collect::<Vec<String>>());
+        *cache_lock = (email_domains_last_modified, std::fs::read_to_string(&crate::SERVER_CONFIG.invalid_email_domain_list_path)
+            .unwrap_or_else(|_| {
+                error!(*LOGGER, "Failed to read email domain to string");
+                String::new()
+            }).lines()
+            .map(|c| c.to_owned())
+            .collect::<Vec<String>>());
         cache_lock.1.binary_search(&domain.to_owned()).is_err()
     } else {
         cache_lock.1.binary_search(&domain.to_owned()).is_err()
@@ -386,6 +401,7 @@ fn totp_internal(secret: &[u8], time: SystemTime, window_seconds: std::time::Dur
 
 use crate::account_management::User;
 use crate::UserConInfo;
+use time::Duration;
 
 pub enum AnalyticsEvent {
     Event(Events),
@@ -398,7 +414,7 @@ pub enum Events {
     EmailChange,
     PasswordChange,
     Download,
-    PreviewCommand
+    PreviewCommand,
 }
 
 pub enum Pages {
@@ -454,10 +470,10 @@ pub fn google_analytics_update(user: Option<&User>, user_info: &UserConInfo, ae:
                                            event_action = "Download"));
                     }
                     Events::PreviewCommand => {
-                    guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
-                    uniform = uniform,
-                    event_category = "Service Action",
-                    event_action = "Preview Command"));
+                        guard.push(format!("{uniform}&ec={event_category}&ea={event_action}",
+                                           uniform = uniform,
+                                           event_category = "Service Action",
+                                           event_action = "Preview Command"));
                     }
                 }
             }
@@ -519,7 +535,7 @@ pub fn google_analytics_update(user: Option<&User>, user_info: &UserConInfo, ae:
     }
 }
 
-pub fn google_analytics_send() -> Result<(),()> {
+pub fn google_analytics_send() -> Result<(), ()> {
     let mut guard = ANALYTICS_ENTRIES.lock().unwrap();
 
     if guard.is_empty() {

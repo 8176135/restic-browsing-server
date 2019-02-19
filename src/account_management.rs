@@ -7,7 +7,9 @@ use rocket::http::{Cookie, Cookies, Status};
 use rocket::request::{Form, FlashMessage, FromRequest, Request};
 use diesel::prelude::*;
 
-use helper::{google_analytics_update,AnalyticsEvent, Events, Pages};
+use helper::{google_analytics_update, AnalyticsEvent, Events, Pages};
+
+use crate::LOGGER;
 
 const USER_DATA_COOKIE_NAME: &str = "session_client_data";
 pub const TWO_FACTOR_AUTH_TIME_WINDOW: u32 = 30;
@@ -44,8 +46,18 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
         let user_cookie = cookies.get_private(USER_DATA_COOKIE_NAME);
 
         if let Some(user_cookie) = user_cookie {
-            let user_cookie_data: UserCookieData = serde_json::from_str(&user_cookie.value().parse::<String>().unwrap()).expect("Failed to deserialize session data");
-            let con = helper::est_db_con();
+            let user_cookie_data: UserCookieData = if let Ok(ucd) = serde_json::from_str(&user_cookie.value().parse::<String>().unwrap())
+                .map_err(|err| error!(*LOGGER, "Can't deserialize authenticated + decrypted cookie: {:?}", err)) {
+                ucd
+            } else {
+                return Outcome::Forward(());
+            };
+            let con = if let Ok(con) = helper::est_db_con() {
+                con
+            } else {
+                return Outcome::Failure((Status::InternalServerError, ()));
+            };
+
             use db_tables::{AuthRepoPasswords, AuthRepoPasswordsDb};
             match AuthRepoPasswords::table.select((AuthRepoPasswords::owning_user, AuthRepoPasswords::auth_repo_enc_pass, AuthRepoPasswords::expiry_date))
                 .filter(AuthRepoPasswords::id.eq(user_cookie_data.enc_id))
@@ -53,7 +65,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 Ok(auth_repo) => {
                     diesel::update(AuthRepoPasswords::table.filter(AuthRepoPasswords::id.eq(user_cookie_data.enc_id)))
                         .set(AuthRepoPasswords::expiry_date.eq(chrono::Utc::now().naive_local() + chrono::Duration::hours(crate::SERVER_CONFIG.session_expire_age_hours)))
-                        .execute(&con).expect("Failed to connect to db, or update failed");
+                        .execute(&con).expect("Failed to update authentication table");
 
                     let mut new_user_cookie = USER_COOKIE.clone();
                     new_user_cookie.set_value(user_cookie.value().to_owned());
@@ -67,7 +79,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 Err(ref err) if err == &diesel::result::Error::NotFound => {
                     Outcome::Forward(())
                 }
-                _ => panic!("Can't connect to db")
+                _ => {
+                    error!(*LOGGER, "Problem with database");
+                    panic!("Can't connect to db")
+                }
             }
         } else {
             Outcome::Forward(())
@@ -76,7 +91,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 }
 
 #[get("/account")]
-pub fn edit_account(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) -> Template {
+pub fn edit_account(user: User, con_info: UserConInfo, flash: Option<FlashMessage>) -> Result<Template, Status> {
     use db_tables::Users;
     #[derive(Serialize)]
     struct AccountManagementData {
@@ -94,7 +109,8 @@ pub fn edit_account(user: User, con_info: UserConInfo, flash: Option<FlashMessag
         Some(c) => (Some(c.msg().to_owned()), Some(c.name().to_owned()))
     };
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
+    ;
 
     let output: db_tables::DbUserManagement =
         Users::dsl::Users.filter(Users::id.eq(user.id))
@@ -102,13 +118,13 @@ pub fn edit_account(user: User, con_info: UserConInfo, flash: Option<FlashMessag
             .first::<db_tables::DbUserManagement>(&con)
             .expect("Can't find user id in database (or connection failed). (Has the user been deleted manually while server is still running?)");
 
-    Template::render("account", AccountManagementData {
+    Ok(Template::render("account", AccountManagementData {
         username: output.username.clone(),
         email: output.email.clone(),
         highlight_2fa: output.secret_2fa_enc.is_none(),
         flash,
         status,
-    })
+    }))
 }
 
 #[get("/account", rank = 2)]
@@ -133,19 +149,20 @@ pub struct NewPassword {
 }
 
 #[post("/account/change/username", data = "<new_name>")]
-pub fn change_username(user: super::User, new_name: Form<NewName>) -> Flash<Redirect> {
+pub fn change_username(user: super::User, new_name: Form<NewName>) -> Result<Flash<Redirect>, Status> {
     use db_tables::Users;
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
+
 
     let insert_result = diesel::update(Users::dsl::Users.filter(Users::id.eq(user.id)))
         .set(Users::username.eq(&new_name.username)).execute(&con);
 
     use helper::IsUnique::*;
     match helper::check_for_unique_error(insert_result).expect("Failed to update username") {
-        Unique(_) => Flash::success(Redirect::to("/account/"), format!("Changed username to \"{}\"", &new_name.username)),
+        Unique(_) => Ok(Flash::success(Redirect::to("/account/"), format!("Changed username to \"{}\"", &new_name.username))),
         NonUnique(_) => {
-            Flash::error(Redirect::to("/account/"), "New username name already exists.")
+            Ok(Flash::error(Redirect::to("/account/"), "New username name already exists."))
         }
     }
 }
@@ -170,10 +187,11 @@ pub fn change_email(user: super::User, new_email: Form<NewEmail>) -> Flash<Redir
 }
 
 #[post("/account/change/password", data = "<new_password>")]
-pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Flash<Redirect> {
+pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Result<Flash<Redirect>, Status> {
     use db_tables::Users;
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
+
 
     let (password, salt) = helper::encrypt_password(&new_password.password);
 
@@ -188,9 +206,9 @@ pub fn change_password(user: super::User, new_password: Form<NewPassword>) -> Fl
                   Users::enced_enc_pass.eq(helper::encrypt_base64(&user.encryption_password, &new_password.password, &salt))))
             .execute(&con).expect("Failed to update password in DB");
 
-        Flash::success(Redirect::to("/account/"), "Successfully updated password")
+        Ok(Flash::success(Redirect::to("/account/"), "Successfully updated password"))
     } else {
-        Flash::error(Redirect::to("/account/"), "Error, incorrect old password.")
+        Ok(Flash::error(Redirect::to("/account/"), "Error, incorrect old password."))
     }
 }
 
@@ -223,7 +241,6 @@ pub fn delete_account(_user: User) -> Flash<Redirect> {
 
 #[get("/register")]
 pub fn register(flash: Option<FlashMessage>, con_info: UserConInfo) -> Template {
-
     google_analytics_update(None, &con_info, AnalyticsEvent::Page(Pages::Register));
 
     let mut context = ::std::collections::HashMap::new();
@@ -243,10 +260,20 @@ pub struct Registration {
 
 #[post("/register_submit", data = "<registration>")]
 pub fn register_submit(registration: Form<Registration>) -> Flash<Redirect> {
-    if !helper::check_email_domain(&registration.email) {
+    if lettre::EmailAddress::new(registration.email.clone()).is_err() {
+        return Flash::error(Redirect::to("/register/"), "Email is invalid");
+    }
+
+    if !helper::check_email_domain(&registration.email.split("@").nth(1).unwrap()) {
         return Flash::error(Redirect::to("/register/"), "Error, temporary emails can't be used sorry.");
     }
-    let con = helper::est_db_con();
+
+    let con = if let Ok(con) = helper::est_db_con() {
+        con
+    } else {
+        return Flash::error(Redirect::to("/register/"), "Internal server error, please file an issue and try again later");
+    };
+
     let (password, salt) = helper::encrypt_password(&registration.password);
 
     let enc = helper::get_random_stuff(32);
@@ -294,7 +321,12 @@ pub fn verify_email(username: String, auth_code: String) -> Flash<Redirect> {
         activation_code: Option<String>
     }
 
-    let con = helper::est_db_con();
+    let con = if let Ok(con) = helper::est_db_con() {
+        con
+    } else {
+        return Flash::error(Redirect::to("/register/"), "Internal server error, please file an issue and try again later");
+    };
+
     let db_act_code = Users::table.filter(Users::username.eq(&username))
         .select(Users::activation_code)
         .first::<Option<String>>(&con).unwrap();
@@ -339,7 +371,12 @@ pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) ->
         *entry += 1;
     }
 
-    let con = helper::est_db_con();
+    let con = if let Ok(con) = helper::est_db_con() {
+        con
+    } else {
+        return Flash::error(Redirect::to("/login/"), "Internal server error, please file an issue and try again later");
+    };
+
     let login_candidate: Result<db_tables::DbUserLogin, diesel::result::Error> =
         Users::dsl::Users.filter(Users::username.eq(&login.username.to_lowercase()))
             .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email, Users::secret_2fa_enc))
@@ -356,23 +393,23 @@ pub fn login(mut cookies: Cookies, con_info: UserConInfo, login: Form<Login>) ->
                     if let Some(secret) = login_candidate.secret_2fa_enc.as_ref() {
                         if helper::totp_check(&base64::decode(secret).unwrap(),
                                               login.two_factor_auth.parse().unwrap_or_default()) {
-                            google_analytics_update(None, &con_info,AnalyticsEvent::Event(Events::LoginSuccess));
+                            google_analytics_update(None, &con_info, AnalyticsEvent::Event(Events::LoginSuccess));
                             login_success(&con, &mut cookies, &login_candidate, &login.password)
                         } else {
                             Flash::error(Redirect::to("/login/"), "Invalid Two Factor Authentication")
                         }
                     } else {
-                        google_analytics_update(None, &con_info,AnalyticsEvent::Event(Events::LoginSuccess));
+                        google_analytics_update(None, &con_info, AnalyticsEvent::Event(Events::LoginSuccess));
                         login_success(&con, &mut cookies, &login_candidate, &login.password)
                     }
                 }
             } else {
-                google_analytics_update(None, &con_info,AnalyticsEvent::Event(Events::LoginFail));
+                google_analytics_update(None, &con_info, AnalyticsEvent::Event(Events::LoginFail));
                 Flash::error(Redirect::to("/login/"), "Username exists, invalid password though.")
             }
         }
         Err(ref err) if err == &diesel::result::Error::NotFound => {
-            google_analytics_update(None, &con_info,AnalyticsEvent::Event(Events::LoginFail));
+            google_analytics_update(None, &con_info, AnalyticsEvent::Event(Events::LoginFail));
             Flash::error(Redirect::to("/login/"), "Invalid username, register with the link below!.")
         }
         _ => panic!("Can't connect to db")
@@ -430,7 +467,8 @@ pub fn act_email_change(username: String, flash: Option<FlashMessage>) -> Result
 
     use db_tables::Users;
     let username = String::from_utf8_lossy(&base64::decode_config(&username, base64::URL_SAFE_NO_PAD).map_err(|_| Status::NotAcceptable)?).to_string();
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
+
     match Users::table.select(Users::activation_code)
         .filter(Users::username.eq(&username))
         .first::<Option<String>>(&con) {
@@ -462,7 +500,8 @@ pub struct ActEmailChangeForm {
 pub fn act_email_change_post(username: String, data: Form<ActEmailChangeForm>) -> Result<Flash<Redirect>, Status> {
     use db_tables::Users;
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
+
     let login_candidate: db_tables::DbUserLogin =
         Users::dsl::Users.filter(Users::username.eq(&username.to_lowercase()))
             .select((Users::id, Users::password, Users::salt, Users::enced_enc_pass, Users::activation_code, Users::email, Users::secret_2fa_enc))
@@ -489,7 +528,7 @@ pub fn act_email_change_post(username: String, data: Form<ActEmailChangeForm>) -
 pub fn enable_2fa(user: User) -> Result<String, Status> {
     use db_tables::Users;
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
     if Users::table.select(Users::secret_2fa_enc)
         .filter(Users::id.eq(user.id))
         .first::<Option<String>>(&con).expect("Failed to connect to db").is_some() {
@@ -513,14 +552,15 @@ pub struct ConfirmationInfo {
 pub fn confirm_2fa(user: User, confirm_data: rocket_contrib::json::Json<ConfirmationInfo>) -> Result<(), Status> {
     use db_tables::Users;
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
+    ;
     if Users::table.select(Users::secret_2fa_enc)
         .filter(Users::id.eq(user.id))
         .first::<Option<String>>(&con).expect("Failed to connect to db").is_some() {
         Err(Status::NotAcceptable)
     } else {
         let secret = base32::decode(base32::Alphabet::RFC4648 { padding: false }, &confirm_data.secret).expect("incoming secret not valid base32");
-        if helper::totp_check(&secret, confirm_data.auth_code_confirm.parse().unwrap()) {
+        if helper::totp_check(&secret, confirm_data.auth_code_confirm.parse().unwrap_or(0)) {
             let base64key = base64::encode(&secret);
             diesel::update(Users::table.filter(Users::id.eq(user.id)))
                 .set(Users::secret_2fa_enc.eq(base64key))
@@ -548,13 +588,19 @@ pub fn disable_2fa(user: User, data: Form<DisableAuthCode>) -> Result<(), Status
         secret_2fa_enc: Option<String>
     }
 
-    let con = helper::est_db_con();
+    let con = helper::est_db_con().map_err(|_| Status::InternalServerError)?;
+
     let secret = Users::table.select(Users::secret_2fa_enc)
         .filter(Users::id.eq(user.id))
         .first::<Option<String>>(&con).expect("Failed to connect to db");
+
     if let Some(secret) = secret {
-        if helper::totp_check(&base64::decode(&secret).unwrap(),
-                              data.auth_code.parse().unwrap_or_default()) {
+        if helper::totp_check(
+            &base64::decode(&secret).map_err(|_| {
+                error!(*LOGGER, "Failed to decode 2fa secret, database entry corrupted? ID = {}", user.id);
+                Status::InternalServerError
+            })?,
+            data.auth_code.parse().unwrap_or_default()) {
             diesel::update(Users::table.filter(Users::id.eq(user.id)))
                 .set(Nullify2FaCode { secret_2fa_enc: None })
                 .execute(&con).expect("Failed to connect to db");
@@ -569,13 +615,18 @@ pub fn disable_2fa(user: User, data: Form<DisableAuthCode>) -> Result<(), Status
 
 #[post("/logout")]
 pub fn logout(_user: User, mut cookies: Cookies) -> Flash<Redirect> {
+    let con = if let Ok(con) = helper::est_db_con() {
+        con
+    } else {
+        cookies.remove_private(Cookie::named("SESSION_CLIENT_DATA_COOKIE_NAME"));
+        return Flash::error(Redirect::to("/login/"), "Internal server error, will logout automatically in 12 hours.");
+    };
+
     diesel::delete(
         db_tables::AuthRepoPasswords::table.filter(db_tables::AuthRepoPasswords::id.eq(
-            serde_json::from_str::<UserCookieData>(
-                &cookies.get_private(USER_DATA_COOKIE_NAME).unwrap().value().parse::<String>().unwrap())
-                .unwrap().enc_id)))
-        .execute(&helper::est_db_con())
-        .expect("Failed to connect to server");
+            serde_json::from_str::<UserCookieData>(&cookies.get_private(USER_DATA_COOKIE_NAME).unwrap().value()).unwrap().enc_id)))
+        .execute(&con)
+        .expect("Failed to delete login");
 
     cookies.remove_private(Cookie::named("SESSION_CLIENT_DATA_COOKIE_NAME"));
     Flash::success(Redirect::to("/login/"), "Successfully logged out.")
