@@ -257,7 +257,7 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
 fn preview_command(user: User, con_info: UserConInfo, repo_name: String) -> Result<String, Status> {
     google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Event(Events::PreviewCommand));
 
-    if let Ok(mut cmd) = helper::restic_db(&helper::est_db_con().map_err(|_| Status::InternalServerError)? ,&repo_name, &user) {
+    if let Ok(mut cmd) = helper::restic_db(&helper::est_db_con().map_err(|_| Status::InternalServerError)?, &repo_name, &user) {
         cmd.arg("ls")
             .arg("-l")
             .arg("latest");
@@ -281,16 +281,15 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
 
     google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Page(Pages::Bucket));
     let con = helper::est_db_con().map_err(|_| Flash::error(Redirect::to("/"), "Internal server error"))?;
-    if let Ok(mut cmd) = helper::restic_db(&con ,&repo_name, &user) {
+    if let Ok(mut cmd) = helper::restic_db(&con, &repo_name, &user) {
         let out = cmd.arg("--json")
             .arg("ls")
             .arg("latest")
             .output().unwrap();
 
         let error_str = String::from_utf8_lossy(&out.stderr);
-        println!("{:?}", out.stdout);
-        let all_files = if let Some(all_files) = serde_json::from_str::<Vec<ResticListOutput>>(&String::from_utf8_lossy(&out.stdout))
-            .unwrap_or_default().into_iter().next() {
+
+        let all_files = if let Some(all_files) = serde_json::from_str::<ResticListOutput>(&String::from_utf8_lossy(&out.stdout)) {
             all_files
         } else {
             // Returns the restic error back to the user.
@@ -302,16 +301,16 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
         };
 
         println!("Error str: {}", error_str);
-        if error_str.find("b2_download_file_by_name: 404:").is_some() {
-            return Err(Flash::error(
-                Redirect::to("/"),
-                "Repository not found, are you sure you spelt the name correctly? (Case Sensitive)"));
-        }
-        if error_str.find("wrong password").is_some() {
-            return Err(Flash::error(
-                Redirect::to("/"),
-                "Repository password is incorrect"));
-        }
+//        if error_str.find("b2_download_file_by_name: 404:").is_some() {
+//            return Err(Flash::error(
+//                Redirect::to("/"),
+//                "Repository not found, are you sure you spelt the name correctly? (Case Sensitive)"));
+//        }
+//        if error_str.find("wrong password").is_some() {
+//            return Err(Flash::error(
+//                Redirect::to("/"),
+//                "Repository password is incorrect"));
+//        }
 
         let mut final_html = String::new();
         {
