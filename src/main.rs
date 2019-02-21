@@ -289,7 +289,7 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
 
         let error_str = String::from_utf8_lossy(&out.stderr);
 
-        let all_files = if let Some(all_files) = serde_json::from_str::<ResticListOutput>(&String::from_utf8_lossy(&out.stdout)) {
+        let all_files = if let Ok(all_files) = serde_json::from_str::<ResticListOutput>(&String::from_utf8_lossy(&out.stdout)) {
             all_files
         } else {
             // Returns the restic error back to the user.
