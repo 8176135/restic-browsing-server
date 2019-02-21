@@ -369,33 +369,31 @@ fn totp_internal(secret: &[u8], time: SystemTime, window_seconds: std::time::Dur
     let counter = time.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() / window_seconds.as_secs();
 
     let key = ring::hmac::SigningKey::new(&ring::digest::SHA1, secret);
-    (-1..=1).fold(false, |acc, offset| {
-        acc || {
-            let counter = (counter as i64 + offset) as u64;
-            let hmac_message: &[u8; 8] = &[
-                ((counter >> 56) & 0xff) as u8,
-                ((counter >> 48) & 0xff) as u8,
-                ((counter >> 40) & 0xff) as u8,
-                ((counter >> 32) & 0xff) as u8,
-                ((counter >> 24) & 0xff) as u8,
-                ((counter >> 16) & 0xff) as u8,
-                ((counter >> 8) & 0xff) as u8,
-                ((counter >> 0) & 0xff) as u8,
-            ];
-            println!("WOO: {}", offset);
-            let data = ring::hmac::sign(&key, hmac_message);
-            let data = data.as_ref();
+    (-1..=1).any(|offset| {
+        let counter = (counter as i64 + offset) as u64;
+        let hmac_message: &[u8; 8] = &[
+            ((counter >> 56) & 0xff) as u8,
+            ((counter >> 48) & 0xff) as u8,
+            ((counter >> 40) & 0xff) as u8,
+            ((counter >> 32) & 0xff) as u8,
+            ((counter >> 24) & 0xff) as u8,
+            ((counter >> 16) & 0xff) as u8,
+            ((counter >> 8) & 0xff) as u8,
+            ((counter >> 0) & 0xff) as u8,
+        ];
+        println!("WOO: {}", offset);
+        let data = ring::hmac::sign(&key, hmac_message);
+        let data = data.as_ref();
 
-            let dynamic_offset = (data[data.len() - 1] & (0xf as u8)) as usize;
+        let dynamic_offset = (data[data.len() - 1] & (0xf as u8)) as usize;
 
-            let truncated: u32 = (((data[dynamic_offset] as u32) & 0x7f) << 24
-                | (data[dynamic_offset + 1] as u32) << 16
-                | (data[dynamic_offset + 2] as u32) << 8
-                | (data[dynamic_offset + 3] as u32)
-            ) as u32 % 10u32.pow(digits);
+        let truncated: u32 = (((data[dynamic_offset] as u32) & 0x7f) << 24
+            | (data[dynamic_offset + 1] as u32) << 16
+            | (data[dynamic_offset + 2] as u32) << 8
+            | (data[dynamic_offset + 3] as u32)
+        ) as u32 % 10u32.pow(digits);
 
-            truncated == guess
-        }
+        truncated == guess
     })
 }
 

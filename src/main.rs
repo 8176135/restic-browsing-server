@@ -288,8 +288,7 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
             .output().unwrap();
 
         let error_str = String::from_utf8_lossy(&out.stderr);
-
-
+        println!("{:?}", out.stdout);
         let all_files = if let Some(all_files) = serde_json::from_str::<Vec<ResticListOutput>>(&String::from_utf8_lossy(&out.stdout))
             .unwrap_or_default().into_iter().next() {
             all_files
