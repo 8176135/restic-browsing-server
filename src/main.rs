@@ -125,7 +125,7 @@ const CONFIG_FILE_PATH: &str = "rbs_config.json";
 //const RESTIC_CACHE_PATH: &str = ".cache/restic/";
 
 lazy_static! {
-    static ref PATH_CACHE: Mutex<HashMap<(i16,String),ResticListOutput>> = Mutex::new(HashMap::new());
+    static ref PATH_CACHE: Mutex<HashMap<(i16,String),Vec<ResticNode>>> = Mutex::new(HashMap::new());
     static ref DOWNLOAD_IN_USE: Mutex<HashMap<i32, bool>> = Mutex::new(HashMap::new());
     static ref CONNECTION_TRACKER: Mutex<HashMap<IpAddr, u16>> = Mutex::new(HashMap::new());
 
@@ -257,7 +257,7 @@ fn get_bucket_not_logged(_folder_name: String) -> Redirect {
 fn preview_command(user: User, con_info: UserConInfo, repo_name: String) -> Result<String, Status> {
     google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Event(Events::PreviewCommand));
 
-    if let Ok(mut cmd) = helper::restic_db(&helper::est_db_con().map_err(|_| Status::InternalServerError)? ,&repo_name, &user) {
+    if let Ok(mut cmd) = helper::restic_db(&helper::est_db_con().map_err(|_| Status::InternalServerError)?, &repo_name, &user) {
         cmd.arg("ls")
             .arg("-l")
             .arg("latest");
@@ -281,24 +281,38 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
 
     google_analytics_update(Some(&user), &con_info, AnalyticsEvent::Page(Pages::Bucket));
     let con = helper::est_db_con().map_err(|_| Flash::error(Redirect::to("/"), "Internal server error"))?;
-    if let Ok(mut cmd) = helper::restic_db(&con ,&repo_name, &user) {
+    if let Ok(mut cmd) = helper::restic_db(&con, &repo_name, &user) {
         let out = cmd.arg("--json")
             .arg("ls")
             .arg("latest")
             .output().unwrap();
 
         let error_str = String::from_utf8_lossy(&out.stderr);
-        println!("{:?}", out.stdout);
-        let all_files = if let Some(all_files) = serde_json::from_str::<Vec<ResticListOutput>>(&String::from_utf8_lossy(&out.stdout))
-            .unwrap_or_default().into_iter().next() {
-            all_files
-        } else {
+
+        if out.stdout.is_empty() {
             // Returns the restic error back to the user.
             // To prevent exploits the server should be ran on a dedicated account that only has permission to the download folder and restic
             // Otherwise restic might be manipulated to output some information about the server (probably not, but just in case).
             return Err(Flash::error(
                 Redirect::to("/"),
                 format!("Restic error: \"{}\"", error_str)));
+        }
+
+        let all_files= match String::from_utf8_lossy(&out.stdout).lines().skip(1)
+                .map(|line| serde_json::from_str::<ResticNode>(line))
+                .collect::<Result<Vec<ResticNode>,serde_json::Error>>() {
+            Ok(c) => c,
+            Err(ref err) if !error_str.is_empty() => {
+                return Err(Flash::error(
+                    Redirect::to("/"),
+                    format!("Restic error: \"{}\"", error_str)));
+            },
+            Err(ref err) => {
+                error!(*LOGGER, "Restic json parsing error: {:?}", err);
+                return Err(Flash::error(
+                    Redirect::to("/"),
+                    format!("Internal server error, please try again later.")));
+            }
         };
 
         println!("Error str: {}", error_str);
@@ -315,7 +329,7 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
 
         let mut final_html = String::new();
         {
-            let first_item = all_files.nodes.first().expect("No files in backup");
+            let first_item = all_files.first().expect("No files in backup");
             if first_item.r#type == "file" {
                 error!(*LOGGER, "First restic json item is a file");
                 panic!("First json item should not be a file...");
@@ -327,7 +341,7 @@ fn get_bucket_data(user: User, con_info: UserConInfo, repo_name: String) -> Resu
 //            }
             let mut counter = 0;
 
-            for (idx, item) in all_files.nodes.iter().enumerate() {
+            for (idx, item) in all_files.iter().enumerate() {
                 let path = PathBuf::from(&item.path);
                 while counter != 0 && !path.starts_with(&cur_folder) {
                     final_html.push_str("</ul></li>");
@@ -418,7 +432,7 @@ fn download_data(user: User, con_info: UserConInfo, repo_name: String, file_path
         if let Ok(mut cmd) = helper::restic_db(&con, &repo_name, &user) {
             cmd.arg("restore").arg("latest").arg(&format!("--target={}", &download_path));
             let total = file_paths.iter().fold(0u64, |prev, path_idx| {
-                let elem = &all_paths.nodes[*path_idx];
+                let elem = &all_paths[*path_idx];
                 cmd.arg("--include=".to_owned() + &elem.path);
                 prev + elem.size.unwrap_or_default()
             });
