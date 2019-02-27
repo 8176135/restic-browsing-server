@@ -2,7 +2,6 @@
 **/*.rs.bk
 database_url
 resources
-/temp_download
 Rocket.toml
 doa.mysql
 TEST
