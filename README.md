@@ -34,7 +34,7 @@ I'm not a security expert, so if you find any problems, please open an issue.
 or you can host it on your own VPS by cloning this repository. You would need:
 1. Nightly build of `rust` (get it with `rustup`)
 2. `mariadb` or `mysql` server, with `restic_browser_structure.sql` imported as a database.
-3. A `database_url` file in the root directory of this repository with the connection info to the database i.e. `mysql://user:pass@127.0.0.1:3306/ResticBrowserAccounts`
+3. A `rbs_config.json` file in the starting directory of the server with the configuration info, see `example/rbs_config.json` 
 4. A `Rocket.toml` file to configure the port and address you want to run the server on, i.e.
     ```
          [development]

@@ -1,33 +1,29 @@
 @import "mixins";
 
 body {
-    background-color: black;
-    color: white;
-    font-family: Electrolize, sans-serif;
-    margin: 0;
-    height: 100vh;
+  background-color: black;
+  color: white;
+  font-family: Electrolize, sans-serif;
+  margin: 0;
+  height: 100vh;
 
   display: grid;
   grid-template-columns: 5% 1fr 3fr 1fr 5%;
-  grid-template-rows: 17.5% max-content max-content max-content auto min-content 150px;
-  grid-template-areas:  ". lHeader header rHeader ."
-                        ". announce announce announce ."
-                        ". tabs tabs tabs ."
-                        ". content content content ."
-                        ". . . . ."
-                        ". . addbox . ."
-                        "footer footer footer footer footer";
+  grid-template-rows: 20% max-content max-content max-content auto min-content 150px;
+  grid-template-areas: ". lHeader header rHeader ." ". announce announce announce ." ". tabs tabs tabs ." ". content content content ." ". . . . ." ". . addbox . ." "footer footer footer footer footer";
 }
 
 input {
   font-family: Electrolize, sans-serif;
   color: white;
 }
+
 label {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+
   &.active {
     cursor: default !important;
   }
@@ -43,6 +39,28 @@ label {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+
+  h2, h4 {
+    margin: 1vh auto;
+    padding: 1vh;
+    color: white;
+  }
+  a {
+    outline: none;
+    text-decoration: none;
+  }
+  h2 {
+    transition: background-color 0.1s linear;
+
+    &:hover {
+      background-color: #101010;
+      cursor: pointer;
+    }
+
+    &:active {
+      background-color: #070707;
+    }
+  }
 }
 
 .logout {
@@ -81,9 +99,11 @@ label {
     margin-top: 10px;
     margin-bottom: 30px;
   }
+
   &.error {
     background-color: #b71c1c;
   }
+
   &.success {
     background-color: #1b5e20;
   }
@@ -93,13 +113,16 @@ label {
     margin-bottom: 0 !important;
   }
 }
+
 .btn {
   //overflow: visible;
   white-space: nowrap;
 }
+
 .btn.full_width {
   flex: 1 0 auto;
 }
+
 .footer .data_use {
   margin: auto;
   text-align: center;
@@ -107,5 +130,5 @@ label {
 }
 
 h1, h2 {
-text-align: center;
+  text-align: center;
 }

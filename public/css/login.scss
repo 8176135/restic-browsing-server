@@ -1,12 +1,16 @@
 body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    //display: flex;
+    //flex-direction: column;
+    //justify-content: center;
+    //align-items: center;
+
 }
 
 #login_panel {
     width: 100%;
+    grid-area: content;
+    margin-top: 10vh;
+    margin-bottom: 10vh;
     form {
         display: flex;
         flex-direction: column;
