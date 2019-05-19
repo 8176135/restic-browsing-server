@@ -26,6 +26,7 @@ extern crate sloggers;
 
 extern crate reqwest;
 extern crate lettre;
+extern crate flate2;
 
 mod helper;
 mod db_tables;
@@ -51,9 +52,11 @@ use account_management::User;
 
 use slog::Logger;
 use sloggers::Build;
+use rocket::fairing;
 
 use helper::{google_analytics_update, Events, Pages, AnalyticsEvent};
 use lettre::smtp::extension::Extension::StartTls;
+use std::io::Write;
 
 #[derive(Debug, Deserialize, Default)]
 pub struct ServerConfig {
@@ -97,6 +100,34 @@ impl<'a, 'r> FromRequest<'a, 'r> for UserConInfo {
             ip: request.client_ip().expect("Nginx not passing real-ip?"),
             session,
         })
+    }
+}
+
+pub struct Gzip;
+impl fairing::Fairing for Gzip {
+    fn info(&self) -> fairing::Info {
+        fairing::Info {
+            name: "Gzip compression",
+            kind: fairing::Kind::Response,
+        }
+    }
+
+    fn on_response(&self, request: &Request, response: &mut rocket::response::Response) {
+        use flate2::{Compression,write::GzEncoder};
+        use std::io::{Cursor, Read};
+        let headers = request.headers();
+        if headers
+            .get("Accept-Encoding")
+            .any(|e| e.to_lowercase().contains("gzip"))
+        {
+            response.body_bytes().and_then(|body| {
+                let mut enc = GzEncoder::new(Vec::new(), Compression::default());
+                enc.write_all(&body).map(|_| {
+                    response.set_sized_body(Cursor::new(enc.finish().expect("Errors when finishing gzip compression")));
+                    response.set_raw_header("Content-Encoding", "gzip");
+                }).map_err(|e| eprintln!("{}", e)).ok();
+            });
+        }
     }
 }
 
@@ -551,6 +582,7 @@ fn main() {
             engines.handlebars.register_helper("url_encode", Box::new(handlebar_helpers::url_encode_helper));
             engines.handlebars.register_helper("to_uppercase", Box::new(handlebar_helpers::to_upper_helper));
         }))
+        .attach(Gzip)
         .mount("/",
                routes![
                     index,
