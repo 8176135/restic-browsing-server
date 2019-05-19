@@ -49,5 +49,3 @@ or you can host it on your own VPS by cloning this repository. You would need:
 5. A reverse proxy for https (like `nginx`)
 
 Then run `cargo build +nightly --release` to build, then just make sure `Rocket.toml` is in the starting directory of the server, and things should work.
-
-(You might want to change the google analytics header in each handlebars (`.hbs`) file)
