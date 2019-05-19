@@ -125,7 +125,7 @@ impl fairing::Fairing for Gzip {
                 enc.write_all(&body).map(|_| {
                     response.set_sized_body(Cursor::new(enc.finish().expect("Errors when finishing gzip compression")));
                     response.set_raw_header("Content-Encoding", "gzip");
-                }).map_err(|e| eprintln!("{}", e)).ok();
+                }).map_err(|e| eprintln!("{}", e)).ok()
             });
         }
     }
