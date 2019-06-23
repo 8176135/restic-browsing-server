@@ -1,0 +1,580 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"exte",
+				"extern-crate\textern crate …;"
+			],
+			[
+				"pus",
+				"push_node"
+			],
+			[
+				"Deq",
+				"DequeNode"
+			],
+			[
+				"if",
+				"if\tif … { … }"
+			],
+			[
+				"begin",
+				"\\begin{}                                          \tlatex-document"
+			],
+			[
+				"bo",
+				"borrow_mut()\t  pub fn borrow_mut(&self) -> RefMut<T>"
+			],
+			[
+				"borr",
+				"borrow()\t  pub fn borrow(&self) -> Ref<T>"
+			],
+			[
+				"borrow",
+				"borrow_mut()\t  pub fn borrow_mut(&self) -> RefMut<T>"
+			],
+			[
+				"Pattern",
+				"PatternIdxError\t  PatternIdxError"
+			],
+			[
+				"stdin",
+				"Stdin\t  pub struct Stdin"
+			],
+			[
+				"unwrap_or",
+				"unwrap_or(${1:def: T})\t  pub fn unwrap_or(self, def: T) -> T"
+			],
+			[
+				"is_emp",
+				"is_empty()\t  pub fn is_empty(&self) -> bool"
+			],
+			[
+				"retu",
+				"return_str\t  let mut return_str = String::new();"
+			],
+			[
+				"filt",
+				"filter_map(${1:f: F})\t  fn filter_map<B, F>(self, f: F) -> FilterMap<Self, F> where Self: Sized, F: FnMut(Self::Item) -> Option<B>,"
+			],
+			[
+				"byte",
+				"Bytes\t  pub struct Bytes<R>"
+			],
+			[
+				"Bufread",
+				"BufReader\t  pub struct BufReader<R>"
+			],
+			[
+				"BufR",
+				"BufReader\t  pub struct BufReader<R>"
+			],
+			[
+				"unimp",
+				"unimplemented!\t  macro_rules! unimplemented {"
+			],
+			[
+				"swap",
+				"swap_with_slice(${1:other: &mut [T]})\t  pub fn swap_with_slice(&mut self, other: &mut [T])"
+			],
+			[
+				"dbg",
+				"dbg!\t  macro_rules! dbg {"
+			],
+			[
+				"asse",
+				"assert_eq\tassert_eq!(…, …)"
+			],
+			[
+				"ass",
+				"assert_eq!\t  macro_rules! assert_eq {"
+			],
+			[
+				"uni",
+				"unimplemented!\t  macro_rules! unimplemented {"
+			],
+			[
+				"Buf",
+				"BufReader\t  pub struct BufReader<R>"
+			],
+			[
+				"std",
+				"std\t  std"
+			],
+			[
+				"prin",
+				"println\tprintln!(…)"
+			],
+			[
+				"POST",
+				"_POST"
+			],
+			[
+				"corret",
+				"correct_questions"
+			],
+			[
+				"answered",
+				"answered_questions"
+			],
+			[
+				"for",
+				"foreach\tforeach …"
+			],
+			[
+				"curren",
+				"current_answer"
+			],
+			[
+				"curre",
+				"current_answer"
+			],
+			[
+				"_",
+				"_SESSION"
+			],
+			[
+				"ques",
+				"question_box_collection"
+			],
+			[
+				"answer",
+				"answer_collection"
+			],
+			[
+				"ans",
+				"answer_collection"
+			],
+			[
+				"cur",
+				"current_answer"
+			],
+			[
+				"current",
+				"current_q_box"
+			],
+			[
+				"answ",
+				"answer_row"
+			],
+			[
+				"que",
+				"question_id"
+			],
+			[
+				"question",
+				"question_id"
+			],
+			[
+				"question_",
+				"question_answer"
+			],
+			[
+				"p",
+				"php\t<?php … ?>"
+			],
+			[
+				"php7",
+				"php7_module"
+			]
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"rust enhanced bu",
+				"Build With: RustEnhanced"
+			],
+			[
+				"rust run",
+				"Build With: RustEnhanced - Run"
+			],
+			[
+				"build",
+				"Build With: RustEnhanced"
+			],
+			[
+				"install pac",
+				"Package Control: Install Package"
+			],
+			[
+				"rust enga",
+				"Preferences: Rust Enhanced Settings"
+			],
+			[
+				"format",
+				"Snippet: format!(…)"
+			],
+			[
+				"indent",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"lsp",
+				"LSP: Restart Servers"
+			],
+			[
+				"rls",
+				"Preferences: LSP Settings"
+			],
+			[
+				"reinde",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"clippy",
+				"Build With: RustEnhanced - Clippy"
+			],
+			[
+				"reind",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"disable",
+				"LSP: Disable Language Server Globally"
+			],
+			[
+				"package control",
+				"Package Control: List Packages"
+			],
+			[
+				"rename sym",
+				"LSP: Rename Symbol"
+			],
+			[
+				"setting",
+				"Preferences: Settings"
+			],
+			[
+				"key",
+				"Preferences: Key Bindings"
+			],
+			[
+				"select theme",
+				"UI: Select Color Scheme"
+			],
+			[
+				"checksys",
+				"LaTeXTools: Check system"
+			],
+			[
+				"check sys",
+				"LaTeXTools: Check system"
+			],
+			[
+				"install p",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"pack",
+				"Package Control: List Packages"
+			],
+			[
+				"settings",
+				"Preferences: Settings"
+			],
+			[
+				"ruste test",
+				"Build With: RustEnhanced - Test"
+			],
+			[
+				"rustenhanced - run",
+				"Build With: RustEnhanced - Run"
+			],
+			[
+				"check",
+				"Build With: RustEnhanced - Check"
+			],
+			[
+				"lsp enable la",
+				"LSP: Enable Language Server Globally"
+			],
+			[
+				"package control install pac",
+				"Package Control: Install Package"
+			],
+			[
+				"disable ",
+				"Package Control: Disable Package"
+			],
+			[
+				"install pa",
+				"Package Control: Install Package"
+			],
+			[
+				"set syntax fish",
+				"Set Syntax: friendly interactive shell (fish)"
+			],
+			[
+				"install ",
+				"Package Control: Install Package"
+			],
+			[
+				"reinte",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"remove pack",
+				"Package Control: Remove Package"
+			],
+			[
+				"package insta",
+				"Package Control: Install Package"
+			],
+			[
+				"theme",
+				"ayu: Activate theme"
+			],
+			[
+				"packa",
+				"Install Package Control"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/hocthulhu/GitProjects/restic-browsing-server"
+	],
+	"file_history":
+	[
+		"/home/hocthulhu/RustProjects/rustPracActix/src/main.rs",
+		"/home/hocthulhu/RustProjects/rustPracActix/Cargo.toml",
+		"/home/hocthulhu/RustProjects/rustPracActix/rustPracActix.sublime-project",
+		"/tmp/houdini-17.5.229-linux_x86_64_gcc6.3/sesinetd.install",
+		"/tmp/xa-VUZR3Z/Readme.txt",
+		"/opt/hfs17.5.229/houdini/sbin/sesinetd",
+		"/home/hocthulhu/Downloads/results/keepers/3E.zlib",
+		"/home/hocthulhu/Downloads/results/keepers/11B",
+		"/opt/hfs17.5.229/houdini_setup_csh",
+		"/etc/sysctl.d/40-ipv6.conf",
+		"/home/hocthulhu/Downloads/results/exif/filter",
+		"/home/hocthulhu/Downloads/results/keepers/3E",
+		"/home/hocthulhu/Downloads/results/keepers/40",
+		"/home/hocthulhu/Downloads/results/keepers/8051",
+		"/home/hocthulhu/Downloads/results/exif/imagehistory",
+		"/home/hocthulhu/GitProjects/compx301-assign3/Cargo.toml",
+		"/home/hocthulhu/GitProjects/compx301-assign3/src/REsearcher_lib.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign3/src/deque_lib.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign3/src/REcompiler_lib.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign3/src/REcompiler.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign3/src/lib.rs",
+		"/home/hocthulhu/file",
+		"/home/hocthulhu/GitProjects/latexfiles/MATHS304Asse3.tex",
+		"/home/hocthulhu/GitProjects/latexfiles/cheatsheet.tex",
+		"/etc/pacman.conf",
+		"/etc/pacman.",
+		"/home/hocthulhu/GitProjects/compx301-assign1/src/heap_sort_lib.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign2/src/LZtrie_lib.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign2/src/LZencode.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign2/src/untitled",
+		"/home/hocthulhu/GitProjects/compx301-assign2/Cargo.toml",
+		"/home/hocthulhu/GitProjects/compx301-assign1/src/poly_merge.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign1/src/make_runs.rs",
+		"/home/hocthulhu/GitProjects/compx301-assign1/.gitignore",
+		"/home/hocthulhu/GitProjects/compx301-assign1/compx301-assign1.sublime-project",
+		"/home/hocthulhu/GitProjects/compx301-assign1/test_out/init_runs.txt",
+		"/home/hocthulhu/GitProjects/compx301-assign1/test_files/BrownCorpus.txt",
+		"/home/hocthulhu/GitProjects/compx301-assign1/test_files/BrownCorpus",
+		"/home/hocthulhu/GitProjects/compx301-assign1/Cargo.lock",
+		"/home/hocthulhu/stuff.txt",
+		"/home/hocthulhu/GitProjects/restic-browsing-server/rbs_config.json",
+		"/home/hocthulhu/.config/fish/functions/load_and_start_silicon.fish",
+		"/home/hocthulhu/.config/fish/functions/join_protected.fish",
+		"/media/veracrypt6/auth.txt",
+		"/home/hocthulhu/GitProjects/namespaced-openvpn/seal-unseal-gateway",
+		"/home/hocthulhu/GitProjects/namespaced-openvpn/setup.cfg",
+		"/home/hocthulhu/.config/pulse/default.pa",
+		"/var/log/Xorg.0.log",
+		"/etc/modprobe.d/nouveau_blacklist.conf",
+		"/home/hocthulhu/.config/fish/config.fish",
+		"/home/hocthulhu/.ssh/config",
+		"/home/hocthulhu/.config/vlc/vlc-qt-interface.conf",
+		"/etc/pulse/default.pa",
+		"/var/log/httpd/error_log",
+		"/srv/http/compx222_quiz/index.php",
+		"/srv/http/compx222_quiz/test.css",
+		"/home/hocthulhu/dumps/222quiz/dump.sql",
+		"/srv/http/compx222_quiz/login.php",
+		"/srv/http/compx222_quiz/test.php",
+		"/srv/http/compx222_quiz/logout.php",
+		"/srv/http/compx222_quiz/shared.php",
+		"/srv/http/compx222_quiz/mysqlconn.php",
+		"/var/log/httpd/access_log",
+		"/srv/http/compx222_quiz/login.html",
+		"/var/log/httpd/acc",
+		"/srv/http/compx222_quiz/shared.css",
+		"/etc/php/php.ini",
+		"/var/log/httpd/err",
+		"/home/hocthulhu/setupNetwork",
+		"/media/veracrypt6/vpnstartup",
+		"/home/hocthulhu/newns",
+		"/media/veracrypt6/au132.nordvpn.com.udp.ovpn",
+		"/home/hocthulhu/.mozilla/firefox/profiles.ini",
+		"/srv/http/Uni_lodging_web_project/HTML/confirm_booking.php",
+		"/srv/http/Uni_lodging_web_project/JS/bookings.js",
+		"/etc/autofs/auto.master",
+		"/etc/httpd/conf/httpd.conf",
+		"/etc/nsswitch.conf",
+		"/etc/autofs/auto.misc",
+		"/srv/http/Uni_lodging_web_project/HTML/bookings.php",
+		"/srv/http/Uni_lodging_web_project/HTML/testing.php",
+		"/home/hocthulhu/.config/htop/htoprc",
+		"/home/hocthulhu/GitProjects/uni_java_projects/src/Resolveall.java",
+		"/home/hocthulhu/arch start buttons by gabriela2400/pacman reaaaadme"
+	],
+	"find":
+	{
+		"height": 54.0
+	},
+	"find_in_files":
+	{
+		"height": 134.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 29.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "restic-browsing-server",
+	"replace":
+	{
+		"height": 54.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
