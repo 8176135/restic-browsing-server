@@ -1,10 +1,3 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-#![allow(proc_macro_derive_resolution_fallback)]
-
-#[macro_use]
-extern crate rocket;
-extern crate rocket_contrib;
-
 #[macro_use]
 extern crate diesel;
 
@@ -34,12 +27,6 @@ mod handlebar_helpers;
 mod account_management;
 mod repository_mods;
 
-use rocket::response::{Redirect, Flash, status::NotFound};
-use rocket::request::{FlashMessage, FromRequest, Request};
-use rocket::http::Status;
-
-use rocket_contrib::{templates::Template, json::Json};
-
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::net::IpAddr;
@@ -52,7 +39,6 @@ use account_management::User;
 
 use slog::Logger;
 use sloggers::Build;
-use rocket::fairing;
 
 use helper::{google_analytics_update, Events, Pages, AnalyticsEvent};
 use lettre::smtp::extension::Extension::StartTls;

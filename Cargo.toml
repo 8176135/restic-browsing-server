@@ -1,33 +1,27 @@
 [package]
 name = "restic_browsing_server"
-version = "0.1.0"
-authors = ["Hand-of-Cthulhu <3rdhandofcthulhu@gmail.com>"]
+version = "0.2.0"
+authors = ["8176135 <8176135@gmail.com>"]
 
 [dependencies]
-rocket = "0.4.0"
-rocket_codegen = "0.4.0"
-serde = { version = "1.0.87", features = ["derive"] }
-lazy_static = "1.2.0"
-zip = "0.5.0"
-walkdir= "2.2.7"
-diesel = { version = "1.4.1", features = ["mysql", "chrono"] }
-chrono = { version = "0.4.6", features = ["serde"] }
-base64 = "0.10.1"
-ring = "0.13.5"
-regex = "1.1.0"
-urlencoding = "1.0.0"
-dirs = "1.0.4"
-lettre-openssl111 = "0.9.0"
-time = "0.1.42"
-serde_json = "1.0.38"
-base32 = "0.4.0"
-reqwest = "0.9.9"
-slog = "2.4.1"
-sloggers = "0.3.2"
-flate2 = "1.0.7"
-#serde_json = "*"
-
-[dependencies.rocket_contrib]
-version = "0.4.0"
-default-features = false
-features = ["handlebars_templates", "json"]
+actix-web = "*"
+serde = { version = "*", features = ["derive"] }
+lazy_static = "*"
+zip = "*"
+walkdir= "*"
+diesel = { version = "*", features = ["mysql", "chrono"] }
+chrono = { version = "*", features = ["serde"] }
+base64 = "*"
+ring = "*"
+regex = "*"
+urlencoding = "*"
+dirs = "*"
+lettre = "*"
+time = "*"
+serde_json = "*"
+base32 = "*"
+reqwest = "*"
+slog = "*"
+sloggers = "*"
+flate2 = "*"
+handlebars = "*"
